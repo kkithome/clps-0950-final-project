@@ -1,5 +1,87 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
+
+import json
+import os
+
+USER_FILE = "users.json"
+
+
+
+def load_users():
+    try:
+        with open(USER_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    
+    
+
+def save_users(users):
+    with open(USER_FILE, "w") as f: 
+        json.dump(users, f, indent=4)
+
+users = load_users()
+
+def is_admin(username):
+    return users.get(username, {}).get("role") == "admin"
+    
+def admin_login():
+    login_window = tk.Toplevel()
+    login_window.title("Admin Login")
+    login_window.geometry("300x200")
+
+    tk.Label(login_window, text="Admin Username").pack(pady=5)
+    entry_username = tk.Entry(login_window)
+    entry_username.pack(pady=5)
+
+    tk.Label(login_window, text="admin Passwork").pack(pady=5)
+    entry_password = tk.Entry(login_window, show="*")
+    entry_password.pack(pady=5)
+
+    def verify_admin():
+        username = entry_username.get()
+        password = entry_password.get()
+
+        if username in users and users[username]["password"] == password and is_admin(username):
+            messagebox.showinfo("Success", "Admin verification successful!")
+            login_window.destroy()
+            delete_user_prompt()
+        else:
+            messagebox.showerror("Error", "Invalid Admin credentials")
+            
+    tk.Button(login_window, text="Login", command=verify_admin).pack(pady=10)
+
+def delete_user_prompt():
+        delete_window = tk.Toplevel()
+        delete_window.title("Delete User")
+        delete_window.geometry("300x200")
+
+        tk.Label(delete_window, text="Enter Username to Delete").pack(pady=5)
+        entry_username = tk.Entry(delete_window)
+        entry_username.pack(pady=5)
+
+        def delete_user():
+            username = entry_username.get()
+            if username in users:
+                confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you wan to delete '{username}'? This action cannot be undone.")
+                if confirm:
+                    del users[username]
+                    save_users(users)
+                    messagebox.showinfo("Success", f"User '{username}' has been deleted successfully.")
+                    delete_window.destroy()
+                else:
+                    messagebox.showinfo("Cancelled", "User deletion cancelled.")
+            else:
+                messagebox.showerror("Error", "Username not found.")
+        
+        tk.Button(delete_window, text="Delete", command=delete_user).pack(pady=10)
+
+            
+
+
+
 
 # Assignment data model
 class Assignment:
@@ -23,8 +105,6 @@ class AssignmentTrackerApp(tk.Tk):
 
         # List to store assignment objects
         self.assignments = [
-            Assignment("Problem Set 1", "2025-05-10", "Physics", "Homework"),
-            Assignment("Essay Draft", "2025-05-12", "English", "Writing", completed=True)
         ]
 
         # Navigation bar
@@ -51,7 +131,7 @@ class AssignmentTrackerApp(tk.Tk):
         self.show_home()
 
     def init_pages(self):
-        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
+        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage, LoginPage):
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
@@ -69,6 +149,10 @@ class AssignmentTrackerApp(tk.Tk):
     def show_todo(self): self.show_page(ToDoPage)
     def show_progress(self): self.show_page(ProgressPage)
     def show_settings(self): self.show_page(SettingsPage)
+    def show_login(self): self.show_page(LoginPage)
+    
+
+
 
 
 # Individual pages
@@ -77,6 +161,117 @@ class HomePage(tk.Frame):
         super().__init__(parent, bg="white")
         label = tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white")
         label.pack(pady=50)
+
+
+        login_frame = tk.Frame(self, bg="white")
+        login_frame.pack(pady=20)
+
+        login_button = tk.Button(login_frame, text="Click Here to Login",
+                                 font=("Helvetica", 16, "bold"), bg="black", 
+                                 fg="blue", command=lambda: controller.show_login())
+        
+        login_button.pack()
+
+
+class LoginPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="white")
+        self.controller = controller
+
+        tk.Label(self, text="Username: ", bg="white").grid(row=0, column=0, padx=10, pady=10)
+        tk.Label(self, text="Password: ", bg="white").grid(row=1, column=0, padx=10, pady=10)
+
+        self.entry_username = tk.Entry(self)
+        self.entry_password = tk.Entry(self, show="*")
+
+        self.entry_username.grid(row=0, column=1, padx=10, pady=10)
+        self.entry_password.grid(row=1, column=1, padx=10, pady=10)
+
+        tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
+        tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, padx=10, pady=10)
+
+    def signin(self, event=None):
+        "resposible for user login"
+        username = self.entry_username.get()
+        password = self.entry_password.get()
+
+        users = load_users()
+
+        if username in users and users[username]["password"] == password:
+            messagebox.showinfo("Success", "Login successful!")
+        else:
+            messagebox.showerror("Error", "Invalid credentials.")
+
+
+
+class SignUpPage(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Sign Up")
+        self.geometry("350x400")
+
+        tk.Label(self, text="First Name:").pack(pady=5)
+        self.entry_first_name = tk.Entry(self)
+        self.entry_first_name.pack(pady=5)
+
+        tk.Label(self, text="Last Name:").pack(pady=5)
+        self.entry_last_name = tk.Entry(self)
+        self.entry_last_name.pack(pady=5)
+
+        tk.Label(self, text="Username:").pack(pady=5)
+        self.entry_username = tk.Entry(self)
+        self.entry_username.pack(pady=5)
+
+        tk.Label(self, text="Password").pack(pady=5)
+        self.entry_password = tk.Entry(self, show="*")
+        self.entry_password.pack(pady=5)
+
+        tk.Label(self, text="Confirm Password").pack(pady=5)
+        self.entry_confirm_password = tk.Entry(self, show="*")
+        self.entry_confirm_password.pack(pady=5)
+
+        tk.Button(self, text="Register", command=self.signup).pack(pady=10)
+
+    def signup(self, event=None):
+        "Handles user registration"
+        first_name = self.entry_first_name.get()
+        last_name = self.entry_last_name.get()
+        username = self.entry_username.get()
+        password = self.entry_confirm_password.get()
+        confirm_password = self.entry_confirm_password.get()
+
+        if not all([first_name, last_name, username, password, confirm_password]):
+            messagebox.showerror("Error", "All fields must be filled.")
+            return
+        
+        if password != confirm_password:
+            messagebox.showerror("Error", "Passwords do not match.")
+            return
+        
+        if username in users:
+            messagebox.showerror("Error", "Username already exists.")
+            return
+
+        users = load_users()
+        users[username] = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "password": password,
+        }
+
+        save_users(users)
+
+        messagebox.showinfo("Success", "Account created successfully!")
+        self.destroy()
+
+    
+
+
+
+        
+
+
+
 
 
 class TablePage(tk.Frame):
@@ -90,7 +285,7 @@ class TablePage(tk.Frame):
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
-        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
+        plus_button = tk.Button(tk.Frame(self, bg="white"), text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
                                 command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=20)
 
@@ -167,6 +362,11 @@ class SettingsPage(tk.Frame):
         super().__init__(parent, bg="white")
         label = tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white")
         label.pack(pady=50)
+
+
+
+
+
 
 
 # Run the application

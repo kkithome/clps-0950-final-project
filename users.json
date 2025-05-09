@@ -1,0 +1,13 @@
+{
+    "user1": {
+        "first_name": "user1",
+        "last_name": "user2",
+        "email": "user1@gmail.com",
+        "password": "example"
+    },
+    "example": {
+        "first_name": "example",
+        "last_name": "example",
+        "password": "example"
+    }
+}
