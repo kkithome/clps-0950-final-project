@@ -113,7 +113,7 @@ class AssignmentTrackerApp(tk.Tk):
 
         buttons = [
             ("Home", self.show_home),
-            ("Table", self.show_table),
+            ("Assignments", self.show_table),
             ("Calendar", self.show_calendar),
             ("To-Do", self.show_todo),
             ("Progress", self.show_progress),
@@ -285,9 +285,10 @@ class TablePage(tk.Frame):
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
-        plus_button = tk.Button(tk.Frame(self, bg="white"), text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
-                                command=self.open_add_assignment_popup)
+        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
+                        command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=20)
+
 
         self.tree = ttk.Treeview(self, columns=("Title", "Due Date", "Class", "Type", "Completed"), show='headings')
         for col in self.tree["columns"]:
