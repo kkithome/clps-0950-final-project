@@ -1,14 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-
+from tkcalendar import Calendar
+from datetime import datetime
 import json
 import os
 
 USER_FILE = "users.json"
-
-
-
 def load_users():
     try:
         with open(USER_FILE, "r") as f:
@@ -81,13 +79,11 @@ def delete_user_prompt():
             
 
 
-
-
 # Assignment data model
 class Assignment:
     def __init__(self, title, due_date, class_name, assignment_type, completed=False):
         self.title = title
-        self.due_date = due_date
+        self.due_date = due_date 
         self.class_name = class_name
         self.assignment_type = assignment_type
         self.completed = completed
@@ -285,12 +281,12 @@ class TablePage(tk.Frame):
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
-        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
+        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="green",
                         command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=20)
 
 
-        self.tree = ttk.Treeview(self, columns=("Title", "Due Date", "Class", "Type", "Completed"), show='headings')
+        self.tree = ttk.Treeview(self, columns=("Title", "Due Date (MM-DD-YYYY)", "Class", "Type", "Completed"), show='headings')
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
             self.tree.column(col, anchor="center")
@@ -340,8 +336,54 @@ class TablePage(tk.Frame):
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        label = tk.Label(self, text="Calendar View Page", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
+        self.controller = controller
+
+        tk.Label(self, text="Assignment Calendar", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        self.calendar = Calendar(
+            self,
+            selectmode="day",
+            date_pattern="yyyy-mm-dd",
+            background="white",
+            foreground="black",
+            headersbackground="#eeeeee",
+            headersforeground="black",
+            weekendbackground="#f9f9f9",
+            weekendforeground="gray",
+            selectbackground="#4CAF50",
+            selectforeground="white"
+        )
+        self.calendar.pack(pady=20)
+
+        self.assignment_listbox = tk.Listbox(self, width=80)
+        self.assignment_listbox.pack(pady=10)
+
+        self.calendar.bind("<<CalendarSelected>>", self.show_assignments_for_selected_date)
+
+    def refresh(self):
+        self.assignment_listbox.delete(0, tk.END)
+        self.calendar.calevent_remove('all')  # Clear previous events
+
+        for a in self.controller.assignments:
+            try:
+                due_date = datetime.strptime(a.due_date, "%Y-%m-%d")
+                self.calendar.calevent_create(due_date, f"{a.title}", 'due')
+            except ValueError:
+                continue
+
+        self.calendar.tag_config('due', background='red', foreground='white')
+
+    def show_assignments_for_selected_date(self, event):
+        selected_date = self.calendar.get_date()
+        self.assignment_listbox.delete(0, tk.END)
+        found = False
+        for a in self.controller.assignments:
+            if a.due_date == selected_date:
+                self.assignment_listbox.insert(tk.END, f"{a.title} - {a.class_name} - {a.assignment_type}")
+                found = True
+        if not found:
+            self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
+
 
 
 class ToDoPage(tk.Frame):
@@ -363,6 +405,8 @@ class SettingsPage(tk.Frame):
         super().__init__(parent, bg="white")
         label = tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white")
         label.pack(pady=50)
+
+
 
 
 
