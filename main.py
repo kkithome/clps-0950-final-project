@@ -105,7 +105,7 @@ class AssignmentTrackerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Assignment Tracker")
-        self.geometry("800x600")
+        self.geometry("1000x600")
         self.configure(bg="white")
 
         self.frames = {}
@@ -309,10 +309,10 @@ class TablePage(tk.Frame):
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
         popup.title("Add Assignment")
-        popup.geometry("300x300")
+        popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date ", "Class Name", "Type"]
+        fields = ["Title", "Due Date", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -333,10 +333,11 @@ class TablePage(tk.Frame):
                 completed=completed_var.get()
             )
             self.controller.assignments.append(new_assignment)
+
             self.refresh()
             popup.destroy()
 
-        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="white").pack(pady=10)
+        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="black").pack(pady=10)
 
     def refresh(self):
         for item in self.tree.get_children():
