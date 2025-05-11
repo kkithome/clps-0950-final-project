@@ -9,5 +9,10 @@
         "first_name": "example",
         "last_name": "example",
         "password": "example"
+    },
+    "selamasfaw": {
+        "first_name": "Selam",
+        "last_name": "Asfaw",
+        "password": "naniandbaba"
     }
 }

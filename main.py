@@ -1,11 +1,13 @@
-import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
-from tkcalendar import Calendar
+import tkinter as tk #python graphical user interfaces
+from tkinter import ttk #themed tkinter that is more modern
+from tkinter import messagebox #shows popup alert boxes
+from tkcalendar import Calendar 
 from datetime import datetime
 import json
 import os
 
+
+#Loading past user data
 USER_FILE = "users.json"
 def load_users():
     try:
@@ -15,29 +17,34 @@ def load_users():
         return {}
     
     
-
+#Creating new user data in readable JSON format
 def save_users(users):
     with open(USER_FILE, "w") as f: 
         json.dump(users, f, indent=4)
 
 users = load_users()
 
+#Creates an Admin page -> we need to add page for this
 def is_admin(username):
-    return users.get(username, {}).get("role") == "admin"
+    return users.get(username, {}).get("role") == "admin" #looks up given username and if user exists checks if they are admin
     
 def admin_login():
+    #create pop up for admin login
     login_window = tk.Toplevel()
     login_window.title("Admin Login")
     login_window.geometry("300x200")
 
+#add a label and in put field for the admin udername
     tk.Label(login_window, text="Admin Username").pack(pady=5)
     entry_username = tk.Entry(login_window)
     entry_username.pack(pady=5)
 
-    tk.Label(login_window, text="admin Passwork").pack(pady=5)
+#add a label and password field (hides input with *)
+    tk.Label(login_window, text="admin Password").pack(pady=5)
     entry_password = tk.Entry(login_window, show="*")
     entry_password.pack(pady=5)
 
+#Verifying admin's credentials
     def verify_admin():
         username = entry_username.get()
         password = entry_password.get()
@@ -48,19 +55,22 @@ def admin_login():
             delete_user_prompt()
         else:
             messagebox.showerror("Error", "Invalid Admin credentials")
-            
+     #Adds a login button that runs the verify_admin function when clicked       
     tk.Button(login_window, text="Login", command=verify_admin).pack(pady=10)
 
 def delete_user_prompt():
+        #create a popup window for deleting a user
         delete_window = tk.Toplevel()
         delete_window.title("Delete User")
         delete_window.geometry("300x200")
 
+        #add label and input for username to delete
         tk.Label(delete_window, text="Enter Username to Delete").pack(pady=5)
         entry_username = tk.Entry(delete_window)
         entry_username.pack(pady=5)
 
         def delete_user():
+            global users
             username = entry_username.get()
             if username in users:
                 confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you wan to delete '{username}'? This action cannot be undone.")
@@ -73,7 +83,8 @@ def delete_user_prompt():
                     messagebox.showinfo("Cancelled", "User deletion cancelled.")
             else:
                 messagebox.showerror("Error", "Username not found.")
-        
+            
+        # Add a "Delete" button that runs delete_user when clicked
         tk.Button(delete_window, text="Delete", command=delete_user).pack(pady=10)
 
             
@@ -230,10 +241,12 @@ class SignUpPage(tk.Toplevel):
 
     def signup(self, event=None):
         "Handles user registration"
+        users= load_users ()
+
         first_name = self.entry_first_name.get()
         last_name = self.entry_last_name.get()
         username = self.entry_username.get()
-        password = self.entry_confirm_password.get()
+        password = self.entry_password.get()
         confirm_password = self.entry_confirm_password.get()
 
         if not all([first_name, last_name, username, password, confirm_password]):
@@ -286,7 +299,7 @@ class TablePage(tk.Frame):
         plus_button.pack(side="right", padx=20)
 
 
-        self.tree = ttk.Treeview(self, columns=("Title", "Due Date (MM-DD-YYYY)", "Class", "Type", "Completed"), show='headings')
+        self.tree = ttk.Treeview(self, columns=("Title", "Due Date (YYYY-MM-DD)", "Class", "Type", "Completed"), show='headings')
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
             self.tree.column(col, anchor="center")
@@ -299,7 +312,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x300")
         popup.grab_set()
 
-        fields = ["Title", "Due Date", "Class Name", "Type"]
+        fields = ["Title", "Due Date ", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -338,12 +351,20 @@ class CalendarPage(tk.Frame):
         super().__init__(parent, bg="white")
         self.controller = controller
 
-        tk.Label(self, text="Assignment Calendar", font=("Helvetica", 20), bg="white").pack(pady=10)
+        # Title
+        tk.Label(self, text="Assignment Calendar", font=("Courier New", 20), bg="white").pack(pady=10)
 
+        # Outer horizontal frame
+        content_frame = tk.Frame(self, bg="white")
+        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # Left: Calendar
         self.calendar = Calendar(
-            self,
+            content_frame,
             selectmode="day",
             date_pattern="yyyy-mm-dd",
+            showweeknumbers=False,
+            firstweekday="sunday",
             background="white",
             foreground="black",
             headersbackground="#eeeeee",
@@ -353,16 +374,33 @@ class CalendarPage(tk.Frame):
             selectbackground="#4CAF50",
             selectforeground="white"
         )
-        self.calendar.pack(pady=20)
+        self.calendar.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 20))
 
-        self.assignment_listbox = tk.Listbox(self, width=80)
-        self.assignment_listbox.pack(pady=10)
+        # Right column with two vertical sections
+        top_right = tk.Frame(content_frame, bg="white", height=100)
+        bottom_right = tk.Frame(content_frame, bg="white")
+        
+        top_right.grid(row=0, column=1, sticky="nsew")
+        bottom_right.grid(row=1, column=1, sticky="nsew")
 
+        # Label + Listbox in the bottom-right quadrant
+        tk.Label(bottom_right, text="Assignments for Selected Date:", font=("Helvetica", 14), bg="white").pack(anchor="w")
+
+        self.assignment_listbox = tk.Listbox(bottom_right, width=50)
+        self.assignment_listbox.pack(fill="both", expand=True, pady=5)
+
+        # Grid weight configuration
+        content_frame.columnconfigure(0, weight=1)
+        content_frame.columnconfigure(1, weight=1)
+        content_frame.rowconfigure(0, weight=1)
+        content_frame.rowconfigure(1, weight=1)
+
+        # Event binding
         self.calendar.bind("<<CalendarSelected>>", self.show_assignments_for_selected_date)
 
     def refresh(self):
         self.assignment_listbox.delete(0, tk.END)
-        self.calendar.calevent_remove('all')  # Clear previous events
+        self.calendar.calevent_remove('all')
 
         for a in self.controller.assignments:
             try:
@@ -377,10 +415,12 @@ class CalendarPage(tk.Frame):
         selected_date = self.calendar.get_date()
         self.assignment_listbox.delete(0, tk.END)
         found = False
+
         for a in self.controller.assignments:
             if a.due_date == selected_date:
                 self.assignment_listbox.insert(tk.END, f"{a.title} - {a.class_name} - {a.assignment_type}")
                 found = True
+
         if not found:
             self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
 
