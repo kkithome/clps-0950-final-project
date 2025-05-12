@@ -98,14 +98,14 @@ class Assignment:
         self.class_name = class_name
         self.assignment_type = assignment_type
         self.completed = completed
-
+        self.priority = priority  # add priority to make it go 'to do' list  
 
 # Main application
 class AssignmentTrackerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Assignment Tracker")
-        self.geometry("1000x600")
+        self.geometry("1400x800")
         self.configure(bg="white")
 
         self.frames = {}
@@ -299,10 +299,15 @@ class TablePage(tk.Frame):
         plus_button.pack(side="right", padx=20)
 
 
-        self.tree = ttk.Treeview(self, columns=("Title", "Due Date (YYYY-MM-DD)", "Class", "Type", "Completed"), show='headings')
-        for col in self.tree["columns"]:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor="center")
+        self.tree = ttk.Treeview(self, columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"), show="headings")
+        self.tree.heading("Priority", text="★")
+        self.tree.heading("Title", text="Title")
+        self.tree.heading("Due Date", text="Due Date")
+        self.tree.heading("Class", text="Class Name")
+        self.tree.heading("Type", text="Type")
+        self.tree.heading("Completed", text="Completed")
+
+
 
         self.tree.pack(fill="both", expand=True, pady=10)
 
@@ -323,6 +328,9 @@ class TablePage(tk.Frame):
 
         completed_var = tk.BooleanVar()
         tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=10)
+        priority_var = tk.BooleanVar()
+        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
+
 
         def save():
             new_assignment = Assignment(
@@ -330,7 +338,8 @@ class TablePage(tk.Frame):
                 entries["Due Date"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
-                completed=completed_var.get()
+                completed=completed_var.get(),
+                priority=priority_var.get() 
             )
             self.controller.assignments.append(new_assignment)
 
@@ -344,8 +353,14 @@ class TablePage(tk.Frame):
             self.tree.delete(item)
 
         for a in self.controller.assignments:
-            self.tree.insert("", "end", values=(a.title, a.due_date, a.class_name, a.assignment_type, "Yes" if a.completed else "No"))
-
+            self.tree.insert("", "end", values=(
+                 "★" if a.priority else "",  # Show star if priority is True
+                 a.title, 
+                 a.due_date, 
+                 a.class_name, 
+                 a.assignment_type, 
+                 "Yes" if a.completed else "No"
+                ))
 
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
