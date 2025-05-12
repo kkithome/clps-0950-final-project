@@ -250,18 +250,29 @@ class TablePage(tk.Frame):
         super().__init__(parent, bg="white")
         self.controller = controller
 
+        # Top toolbar
         top_frame = tk.Frame(self, bg="white")
         top_frame.pack(fill="x", pady=(20, 0))
 
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
+        edit_button = tk.Button(top_frame, text="Edit Selected", bg="#f0ad4e", fg="black", command=self.edit_selected)
+        edit_button.pack(side="right", padx=10)
+
+        delete_button = tk.Button(top_frame, text="Delete Selected", bg="red", fg="black", command=self.delete_selected)
+        delete_button.pack(side="right", padx=10)
+
         plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="green",
-                        command=self.open_add_assignment_popup)
-        plus_button.pack(side="right", padx=20)
+                                command=self.open_add_assignment_popup)
+        plus_button.pack(side="right", padx=10)
 
-
-        self.tree = ttk.Treeview(self, columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"), show="headings")
+        # Assignment Treeview
+        self.tree = ttk.Treeview(
+            self,
+            columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
+            show="headings"
+        )
         self.tree.heading("Priority", text="★")
         self.tree.heading("Title", text="Title")
         self.tree.heading("Due Date", text="Due Date")
@@ -269,9 +280,19 @@ class TablePage(tk.Frame):
         self.tree.heading("Type", text="Type")
         self.tree.heading("Completed", text="Completed")
 
-
-
         self.tree.pack(fill="both", expand=True, pady=10)
+
+    def refresh(self):
+        self.tree.delete(*self.tree.get_children())
+        for a in self.controller.assignments:
+            self.tree.insert("", "end", values=(
+                "★" if a.priority else "",
+                a.title,
+                a.due_date,
+                a.class_name,
+                a.assignment_type,
+                "Yes" if a.completed else "No"
+            ))
 
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
@@ -289,10 +310,9 @@ class TablePage(tk.Frame):
             entries[field] = entry
 
         completed_var = tk.BooleanVar()
-        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=10)
         priority_var = tk.BooleanVar()
+        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=5)
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
-
 
         def save():
             new_assignment = Assignment(
@@ -301,28 +321,85 @@ class TablePage(tk.Frame):
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
-                priority=priority_var.get() 
+                priority=priority_var.get()
             )
             self.controller.assignments.append(new_assignment)
-
             self.refresh()
             popup.destroy()
 
         tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="black").pack(pady=10)
 
-    def refresh(self):
-        for item in self.tree.get_children():
+    def delete_selected(self):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an assignment to delete.")
+            return
+
+        for item in selected_items:
+            values = self.tree.item(item, "values")
+            title = values[1]
+            due_date = values[2]
+            self.controller.assignments = [
+                a for a in self.controller.assignments
+                if not (a.title == title and a.due_date == due_date)
+            ]
             self.tree.delete(item)
 
-        for a in self.controller.assignments:
-            self.tree.insert("", "end", values=(
-                 "★" if a.priority else "",  # Show star if priority is True
-                 a.title, 
-                 a.due_date, 
-                 a.class_name, 
-                 a.assignment_type, 
-                 "Yes" if a.completed else "No"
-                ))
+        messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
+
+    def edit_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select an assignment to edit.")
+            return
+
+        item = selected[0]
+        values = self.tree.item(item, "values")
+        title = values[1]
+        due_date = values[2]
+
+        popup = tk.Toplevel(self)
+        popup.title("Edit Assignment")
+        popup.geometry("300x350")
+        popup.grab_set()
+
+        fields = ["Title", "Due Date", "Class Name", "Type"]
+        entries = {}
+
+        for i, field in enumerate(fields):
+            tk.Label(popup, text=field).pack(pady=(10 if i == 0 else 5, 0))
+            entry = tk.Entry(popup)
+            entry.insert(0, values[i + 1])  # shift index: skip priority
+            entry.pack()
+            entries[field] = entry
+
+        completed_var = tk.BooleanVar(value=(values[5] == "Yes"))
+        priority_var = tk.BooleanVar(value=(values[0] == "★"))
+        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=5)
+        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
+
+        def save():
+            # Remove old
+            self.controller.assignments = [
+                a for a in self.controller.assignments
+                if not (a.title == title and a.due_date == due_date)
+            ]
+
+            updated = Assignment(
+                entries["Title"].get(),
+                entries["Due Date"].get(),
+                entries["Class Name"].get(),
+                entries["Type"].get(),
+                completed=completed_var.get(),
+                priority=priority_var.get()
+            )
+
+            self.controller.assignments.append(updated)
+            self.refresh()
+            popup.destroy()
+
+        tk.Button(popup, text="Save", command=save, bg="#f0ad4e", fg="white").pack(pady=10)
+
 
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
