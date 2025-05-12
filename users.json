@@ -14,5 +14,10 @@
         "first_name": "Selam",
         "last_name": "Asfaw",
         "password": "naniandbaba"
+    },
+    "shahil": {
+        "first_name": "shayla",
+        "last_name": "hil",
+        "password": "12345"
     }
 }

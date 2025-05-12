@@ -73,7 +73,7 @@ def delete_user_prompt():
             global users
             username = entry_username.get()
             if username in users:
-                confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you wan to delete '{username}'? This action cannot be undone.")
+                confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete '{username}'? This action cannot be undone.")
                 if confirm:
                     del users[username]
                     save_users(users)
@@ -92,7 +92,7 @@ def delete_user_prompt():
 
 # Assignment data model
 class Assignment:
-    def __init__(self, title, due_date, class_name, assignment_type, completed=False):
+    def __init__(self, title, due_date, class_name, assignment_type, completed=False, priority=False):
         self.title = title
         self.due_date = due_date 
         self.class_name = class_name
@@ -206,6 +206,7 @@ class LoginPage(tk.Frame):
 
         if username in users and users[username]["password"] == password:
             messagebox.showinfo("Success", "Login successful!")
+            self.controller.show_table()
         else:
             messagebox.showerror("Error", "Invalid credentials.")
 
