@@ -104,10 +104,15 @@ class AssignmentTrackerApp(tk.Tk):
         self.geometry("800x600")
         self.configure(bg="white")
 
-        self.current_user = None
-        self.assignments = []
+        self.frames = {}
 
-        self.nav_bar = tk.Frame(self, bg="#eee", height=50)
+        # List to store assignment objects
+        self.assignments = [
+        ]
+
+        # Navigation bar
+        nav_bar = tk.Frame(self, bg="#eee", height=50)
+        nav_bar.pack(fill='x')
 
         buttons = [
             ("Home", self.show_home),
@@ -118,19 +123,21 @@ class AssignmentTrackerApp(tk.Tk):
             ("Settings", self.show_settings),
         ]
 
-        for name, command in buttons:
-            tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
+        #for name, command in buttons:
+            #tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
 
         self.container = tk.Frame(self, bg="white")
         self.container.pack(fill="both", expand=True)
 
-        self.frames = {}
-        for PageClass in (LoginPage, HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
+        self.init_pages()
+        self.show_home()
+
+    def init_pages(self):
+        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage, LoginPage):
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
-
         self.show_login()
 
     def show_nav_bar(self):
@@ -151,9 +158,29 @@ class AssignmentTrackerApp(tk.Tk):
     def show_todo(self): self.show_page(ToDoPage)
     def show_progress(self): self.show_page(ProgressPage)
     def show_settings(self): self.show_page(SettingsPage)
-    def show_login(self):
-        self.hide_nav_bar()
-        self.show_page(LoginPage)
+    def show_login(self): self.show_page(LoginPage)
+    
+
+
+
+
+# Individual pages
+class HomePage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="white")
+        label = tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+
+        login_frame = tk.Frame(self, bg="white")
+        login_frame.pack(pady=20)
+
+        login_button = tk.Button(login_frame, text="Click Here to Login",
+                                 font=("Helvetica", 16, "bold"), bg="black", 
+                                 fg="blue", command=lambda: controller.show_login())
+        
+        login_button.pack()
+
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -171,7 +198,8 @@ class LoginPage(tk.Frame):
         tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
         tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, pady=10, padx=10)
 
-    def signin(self):
+    def signin(self, event=None):
+        "resposible for user login"
         username = self.entry_username.get()
         password = self.entry_password.get()
         users = load_users()
@@ -180,8 +208,7 @@ class LoginPage(tk.Frame):
             self.controller.current_user = users[username]
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
-            self.controller.show_nav_bar()
-            self.controller.show_home()
+            self.controller.show_table()
         else:
             messagebox.showerror("Error", "Invalid credentials.")
 
@@ -240,10 +267,6 @@ class SignUpPage(tk.Toplevel):
         messagebox.showinfo("Success", "Account created successfully!")
         self.destroy()
 
-class HomePage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="white")
-        tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white").pack(pady=50)
 
 class TablePage(tk.Frame):
     def __init__(self, parent, controller):
@@ -256,8 +279,8 @@ class TablePage(tk.Frame):
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
-        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="green",
-                        command=self.open_add_assignment_popup)
+        plus_button = tk.Button(tk.Frame(self, bg="white"), text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
+                                command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=20)
 
 
@@ -276,7 +299,7 @@ class TablePage(tk.Frame):
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
         popup.title("Add Assignment")
-        popup.geometry("300x350")
+        popup.geometry("300x300")
         popup.grab_set()
 
         fields = ["Title", "Due Date", "Class Name", "Type"]
@@ -290,9 +313,6 @@ class TablePage(tk.Frame):
 
         completed_var = tk.BooleanVar()
         tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=10)
-        priority_var = tk.BooleanVar()
-        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
-
 
         def save():
             new_assignment = Assignment(
@@ -300,15 +320,13 @@ class TablePage(tk.Frame):
                 entries["Due Date"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
-                completed=completed_var.get(),
-                priority=priority_var.get() 
+                completed=completed_var.get()
             )
             self.controller.assignments.append(new_assignment)
-
             self.refresh()
             popup.destroy()
 
-        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="black").pack(pady=10)
+        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="white").pack(pady=10)
 
     def refresh(self):
         for item in self.tree.get_children():
