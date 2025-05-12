@@ -14,5 +14,15 @@
         "first_name": "Selam",
         "last_name": "Asfaw",
         "password": "naniandbaba"
+    },
+    "rukubay": {
+        "first_name": "Ruth",
+        "last_name": "Ukubay",
+        "password": "ruthukubay"
+    },
+    "joemama": {
+        "first_name": "Joe",
+        "last_name": "mama",
+        "password": "joemama"
     }
 }
