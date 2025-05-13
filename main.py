@@ -482,7 +482,32 @@ class CalendarPage(tk.Frame):
 class ToDoPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        tk.Label(self, text="To-Do Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+        self.controller = controller
+
+        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        self.todo_listbox = tk.Listbox(self, width=80, height=20)
+        self.todo_listbox.pack(padx=20, pady=10)
+
+        self.refresh()
+
+    def refresh(self):
+        self.todo_listbox.delete(0, tk.END)
+
+        # Separate starred and non-starred assignments
+        starred = []
+        regular = []
+
+        for a in self.controller.assignments:
+            item_str = f"★ {a.title}" if getattr(a, "starred", False) else a.title
+            display = f"{item_str} - {a.class_name} - {a.due_date}"
+            if getattr(a, "starred", False):
+                starred.append(display)
+            else:
+                regular.append(display)
+
+        for item in starred + regular:
+            self.todo_listbox.insert(tk.END, item)
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
