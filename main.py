@@ -19,7 +19,7 @@ def load_users():
     except FileNotFoundError:
         return {}
     
-def load_users_settings():
+def load_settings():
     try: 
         with open(SETTINGS_FILE, "r") as f:
             return json.load(f)
@@ -33,11 +33,11 @@ def save_users(users):
 
 def save_settings(users):
     with open(SETTINGS_FILE, "w") as f:
-        json.dump(users_settings, f, indent=4)
+        json.dump(settings, f, indent=4)
 
 
 users = load_users()
-users_settings = load_users_settings()
+settings = load_settings()
 
 #Creates an Admin page -> we need to add page for this
 def is_admin(username):
@@ -197,6 +197,50 @@ class LoginPage(tk.Frame):
 
         tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
         tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, pady=10, padx=10)
+        tk.Button(self, text="Forgot Password?", command=self.forgot_password).grid(row=2, column=2, pady=10, padx=10)
+        
+
+    def forgot_password(self):
+        reset_window = tk.Toplevel()
+        reset_window.title("Reset Password")
+        reset_window.geometry("300x300")
+
+        tk.Label(reset_window, text="Enter Username:", bg="white").pack(pady=5)
+        entry_username = tk.Entry(reset_window)
+        entry_username.pack(pady=5)
+
+        tk.Label(reset_window, text="Enter New Password:", bg="white").pack(pady=5)
+        entry_new_password = tk.Entry(reset_window, show="*")
+        entry_new_password.pack(pady=5)
+
+        tk.Label(reset_window, text="Confirm New Password:", bg="white").pack(pady=5)
+        entry_confirmation = tk.Entry(reset_window, show="*")
+        entry_confirmation.pack(pady=5)
+
+        def reset():
+            username = entry_username.get()
+            new_password = entry_new_password.get()
+            confirm_password = entry_confirmation.get()
+            users = load_users()
+            settings = load_settings()
+
+            if username in users:
+                if new_password == confirm_password:
+                    users[username]["password"] = new_password
+                    settings[username]["password"] = new_password
+
+                    save_users(users)
+                    save_settings(settings)
+
+                    messagebox.showinfo("Success", "Password updated successfully")
+                    reset_window.destroy()
+
+                else:
+                    messagebox.showerror("Error", "Passwords do not match. Please try again")
+            else:
+                messagebox.showerror("Error", "Username not found.")
+
+        tk.Button(reset_window, text="Reset", command=reset).pack(pady=10).grid(row=0, column=1)
 
    
 
@@ -210,6 +254,16 @@ class LoginPage(tk.Frame):
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
             self.controller.show_nav_bar()
+
+            default_view = settings.get(username, {}).get("default_view", "Home")
+            page_mapping = {
+                "Home": HomePage, 
+                "Table": TablePage,
+                "Calendar": CalendarPage,
+                "Todo": ToDoPage,
+                "Progress": ProgressPage,
+            }
+            self.controller.show_page(page_mapping.get(default_view))
 
         else:
             messagebox.showerror("Error", "Invalid credentials.")
@@ -267,7 +321,7 @@ class SignUpPage(tk.Toplevel):
             "password": password,
         }
 
-        users_settings[username] = {
+        settings[username] = {
             "password": password,
             "first_name": first_name,
             "last_name": last_name,
