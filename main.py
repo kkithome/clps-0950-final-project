@@ -33,13 +33,13 @@ def admin_login():
     login_window = tk.Toplevel()
     login_window.title("Admin Login")
     login_window.geometry("300x200")
-    
-    #add a label and in put field for the admin udername
+
+#add a label and in put field for the admin udername
     tk.Label(login_window, text="Admin Username").pack(pady=5)
     entry_username = tk.Entry(login_window)
     entry_username.pack(pady=5)
 
-    #add a label and password field (hides input with *)
+#add a label and password field (hides input with *)
     tk.Label(login_window, text="admin Password").pack(pady=5)
     entry_password = tk.Entry(login_window, show="*")
     entry_password.pack(pady=5)
@@ -57,46 +57,6 @@ def admin_login():
             messagebox.showerror("Error", "Invalid Admin credentials")
      #Adds a login button that runs the verify_admin function when clicked       
     tk.Button(login_window, text="Login", command=verify_admin).pack(pady=10)
-
-class ToDoPage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="white")
-        self.controller = controller
-
-        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
-
-        # Frame for the listbox and scrollbar
-        list_frame = tk.Frame(self, bg="white")
-        list_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
-        self.todo_listbox = tk.Listbox(list_frame, font=("Helvetica", 12))
-        self.todo_listbox.pack(side="left", fill="both", expand=True)
-
-        scrollbar = tk.Scrollbar(list_frame)
-        scrollbar.pack(side="right", fill="y")
-        self.todo_listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.todo_listbox.yview)
-
-    def refresh(self):
-        # Clear the listbox
-        self.todo_listbox.delete(0, tk.END)
-
-        # Filter for incomplete assignments
-        assignments = [
-            a for a in self.controller.assignments if not a.completed
-        ]
-
-        # Sort by: Priority first, then due date
-        assignments.sort(key=lambda a: (not a.priority, a.due_date))
-
-        if not assignments:
-            self.todo_listbox.insert(tk.END, "🎉 No assignments to do!")
-            return
-
-        # Display formatted entries
-        for a in assignments:
-            entry = f"{'★' if a.priority else ' '} {a.due_date} - {a.title} ({a.class_name})"
-            self.todo_listbox.insert(tk.END, entry)
 
 def delete_user_prompt():
         #create a popup window for deleting a user
@@ -144,15 +104,10 @@ class AssignmentTrackerApp(tk.Tk):
         self.geometry("800x600")
         self.configure(bg="white")
 
-        self.frames = {}
+        self.current_user = None
+        self.assignments = []
 
-        # List to store assignment objects
-        self.assignments = [
-        ]
-
-        # Navigation bar
         self.nav_bar = tk.Frame(self, bg="#eee", height=50)
-        self.nav_bar.pack(fill='x')
 
         buttons = [
             ("Home", self.show_home),
@@ -163,21 +118,19 @@ class AssignmentTrackerApp(tk.Tk):
             ("Settings", self.show_settings),
         ]
 
-        #for name, command in buttons:
-            #tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
+        for name, command in buttons:
+            tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
 
         self.container = tk.Frame(self, bg="white")
         self.container.pack(fill="both", expand=True)
 
-        self.init_pages()
-        self.show_home()
-
-    def init_pages(self):
-        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage, LoginPage):
+        self.frames = {}
+        for PageClass in (LoginPage, HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
+
         self.show_login()
 
     def show_nav_bar(self):
@@ -198,25 +151,9 @@ class AssignmentTrackerApp(tk.Tk):
     def show_todo(self): self.show_page(ToDoPage)
     def show_progress(self): self.show_page(ProgressPage)
     def show_settings(self): self.show_page(SettingsPage)
-    def show_login(self): self.show_page(LoginPage)
-    
-# Individual pages
-class HomePage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="white")
-        label = tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
-
-
-        login_frame = tk.Frame(self, bg="white")
-        login_frame.pack(pady=20)
-
-        login_button = tk.Button(login_frame, text="Click Here to Login",
-                                 font=("Helvetica", 16, "bold"), bg="black", 
-                                 fg="blue", command=lambda: controller.show_login())
-        
-        login_button.pack()
-
+    def show_login(self):
+        self.hide_nav_bar()
+        self.show_page(LoginPage)
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -234,8 +171,7 @@ class LoginPage(tk.Frame):
         tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
         tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, pady=10, padx=10)
 
-    def signin(self, event=None):
-        "resposible for user login"
+    def signin(self):
         username = self.entry_username.get()
         password = self.entry_password.get()
         users = load_users()
@@ -244,7 +180,8 @@ class LoginPage(tk.Frame):
             self.controller.current_user = users[username]
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
-            self.controller.show_table()
+            self.controller.show_nav_bar()
+            self.controller.show_home()
         else:
             messagebox.showerror("Error", "Invalid credentials.")
 
@@ -303,24 +240,39 @@ class SignUpPage(tk.Toplevel):
         messagebox.showinfo("Success", "Account created successfully!")
         self.destroy()
 
+class HomePage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="white")
+        tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white").pack(pady=50)
 
 class TablePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
         self.controller = controller
 
+        # Top toolbar
         top_frame = tk.Frame(self, bg="white")
         top_frame.pack(fill="x", pady=(20, 0))
 
         label = tk.Label(top_frame, text="Assignment Table", font=("Helvetica", 20), bg="white")
         label.pack(side="left", padx=20)
 
-        plus_button = tk.Button(tk.Frame(self, bg="white"), text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="white",
+        edit_button = tk.Button(top_frame, text="Edit Selected", bg="#f0ad4e", fg="black", command=self.edit_selected)
+        edit_button.pack(side="right", padx=10)
+
+        delete_button = tk.Button(top_frame, text="Delete Selected", bg="red", fg="black", command=self.delete_selected)
+        delete_button.pack(side="right", padx=10)
+
+        plus_button = tk.Button(top_frame, text="+", font=("Helvetica", 16, "bold"), bg="#4CAF50", fg="green",
                                 command=self.open_add_assignment_popup)
-        plus_button.pack(side="right", padx=20)
+        plus_button.pack(side="right", padx=10)
 
-
-        self.tree = ttk.Treeview(self, columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"), show="headings")
+        # Assignment Treeview
+        self.tree = ttk.Treeview(
+            self,
+            columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
+            show="headings"
+        )
         self.tree.heading("Priority", text="★")
         self.tree.heading("Title", text="Title")
         self.tree.heading("Due Date", text="Due Date")
@@ -328,14 +280,24 @@ class TablePage(tk.Frame):
         self.tree.heading("Type", text="Type")
         self.tree.heading("Completed", text="Completed")
 
-
-
         self.tree.pack(fill="both", expand=True, pady=10)
+
+    def refresh(self):
+        self.tree.delete(*self.tree.get_children())
+        for a in self.controller.assignments:
+            self.tree.insert("", "end", values=(
+                "★" if a.priority else "",
+                a.title,
+                a.due_date,
+                a.class_name,
+                a.assignment_type,
+                "Yes" if a.completed else "No"
+            ))
 
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
         popup.title("Add Assignment")
-        popup.geometry("300x300")
+        popup.geometry("300x350")
         popup.grab_set()
 
         fields = ["Title", "Due Date", "Class Name", "Type"]
@@ -348,40 +310,96 @@ class TablePage(tk.Frame):
             entries[field] = entry
 
         completed_var = tk.BooleanVar()
-        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=10)
-        
         priority_var = tk.BooleanVar()
-        tk.Checkbutton(popup, text="High Priority", variable=priority_var).pack(pady=5)
+        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=5)
+        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
-        new_assignment = Assignment(
-            entries["Title"].get(),
-            entries["Due Date"].get(),
-            entries["Class Name"].get(),
-            entries["Type"].get(),
-            completed=completed_var.get(),
-            priority=priority_var.get()
-        )
+        def save():
+            new_assignment = Assignment(
+                entries["Title"].get(),
+                entries["Due Date"].get(),
+                entries["Class Name"].get(),
+                entries["Type"].get(),
+                completed=completed_var.get(),
+                priority=priority_var.get()
+            )
+            self.controller.assignments.append(new_assignment)
+            self.refresh()
+            popup.destroy()
 
-        self.controller.assignments.append(new_assignment)
-        self.refresh()
-        popup.destroy()
- 
+        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="black").pack(pady=10)
 
-        tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="white").pack(pady=10)
+    def delete_selected(self):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an assignment to delete.")
+            return
 
-    def refresh(self):
-        for item in self.tree.get_children():
+        for item in selected_items:
+            values = self.tree.item(item, "values")
+            title = values[1]
+            due_date = values[2]
+            self.controller.assignments = [
+                a for a in self.controller.assignments
+                if not (a.title == title and a.due_date == due_date)
+            ]
             self.tree.delete(item)
 
-        for a in self.controller.assignments:
-            self.tree.insert("", "end", values=(
-                 "★" if a.priority else "",  # Show star if priority is True
-                 a.title, 
-                 a.due_date, 
-                 a.class_name, 
-                 a.assignment_type, 
-                 "Yes" if a.completed else "No"
-                ))
+        messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
+
+    def edit_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select an assignment to edit.")
+            return
+
+        item = selected[0]
+        values = self.tree.item(item, "values")
+        title = values[1]
+        due_date = values[2]
+
+        popup = tk.Toplevel(self)
+        popup.title("Edit Assignment")
+        popup.geometry("300x350")
+        popup.grab_set()
+
+        fields = ["Title", "Due Date", "Class Name", "Type"]
+        entries = {}
+
+        for i, field in enumerate(fields):
+            tk.Label(popup, text=field).pack(pady=(10 if i == 0 else 5, 0))
+            entry = tk.Entry(popup)
+            entry.insert(0, values[i + 1])  # shift index: skip priority
+            entry.pack()
+            entries[field] = entry
+
+        completed_var = tk.BooleanVar(value=(values[5] == "Yes"))
+        priority_var = tk.BooleanVar(value=(values[0] == "★"))
+        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=5)
+        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
+
+        def save():
+            # Remove old
+            self.controller.assignments = [
+                a for a in self.controller.assignments
+                if not (a.title == title and a.due_date == due_date)
+            ]
+
+            updated = Assignment(
+                entries["Title"].get(),
+                entries["Due Date"].get(),
+                entries["Class Name"].get(),
+                entries["Type"].get(),
+                completed=completed_var.get(),
+                priority=priority_var.get()
+            )
+
+            self.controller.assignments.append(updated)
+            self.refresh()
+            popup.destroy()
+
+        tk.Button(popup, text="Save", command=save, bg="#f0ad4e", fg="white").pack(pady=10)
+
 
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -445,7 +463,6 @@ class CalendarPage(tk.Frame):
                 self.calendar.calevent_create(due_date, f"{a.title}", 'due')
             except ValueError:
                 continue
-        
 
         self.calendar.tag_config('due', background='red', foreground='white')
 
@@ -465,47 +482,7 @@ class CalendarPage(tk.Frame):
 class ToDoPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        self.controller = controller
-
-        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
-
-        # Frame for the listbox and scrollbar
-        list_frame = tk.Frame(self, bg="white")
-        list_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
-        self.todo_listbox = tk.Listbox(list_frame, font=("Helvetica", 12))
-        self.todo_listbox.pack(side="left", fill="both", expand=True)
-
-        scrollbar = tk.Scrollbar(list_frame)
-        scrollbar.pack(side="right", fill="y")
-        self.todo_listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.todo_listbox.yview)
-
-    def refresh(self):
-        # Clear the listbox
-        self.todo_listbox.delete(0, tk.END)
-
-        # Filter for incomplete assignments
-        assignments = [
-            a for a in self.controller.assignments if not a.completed
-        ]
-
-        # Sort by: Priority first, then due date
-        assignments.sort(key=lambda a: (not a.priority, a.due_date))
-
-        if not assignments:
-            self.todo_listbox.insert(tk.END, "🎉 No assignments to do!")
-            return
-
-        # Display formatted entries
-        for a in self.controller.assignments:
-            if a.due_date == selected_date:
-                self.assignment_listbox.insert(tk.END, f"{a.title} - {a.class_name} - {a.assignment_type}")
-                found = True
-            if not found:
-                self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
-
-
+        tk.Label(self, text="To-Do Page", font=("Helvetica", 20), bg="white").pack(pady=20)
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
