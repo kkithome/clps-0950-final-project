@@ -1,6 +1,7 @@
 import tkinter as tk #python graphical user interfaces
 from tkinter import ttk #themed tkinter that is more modern
-from tkinter import messagebox #shows popup alert boxes
+from tkinter import messagebox
+from tkinter import filedialog #shows popup alert boxes
 from tkcalendar import Calendar 
 from datetime import datetime
 import json
@@ -9,6 +10,7 @@ import os
 
 #Loading past user data
 USER_FILE = "users.json"
+SETTINGS_FILE = "users_settings.json"
 
 def load_users():
     try:
@@ -16,13 +18,26 @@ def load_users():
             return json.load(f)
     except FileNotFoundError:
         return {}
+    
+def load_users_settings():
+    try: 
+        with open(SETTINGS_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    
 
-#Creating new user data in readable JSON format
 def save_users(users):
     with open(USER_FILE, "w") as f: 
         json.dump(users, f, indent=4)
 
+def save_settings(users):
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(users_settings, f, indent=4)
+
+
 users = load_users()
+users_settings = load_users_settings()
 
 #Creates an Admin page -> we need to add page for this
 def is_admin(username):
@@ -133,11 +148,23 @@ class AssignmentTrackerApp(tk.Tk):
 
         self.show_login()
 
+        tk.Button(self.nav_bar, text="Logout", command=self.logout).pack(side="right", padx=10, pady=5)
+
+    def logout(self):
+        self.current_user = None
+        messagebox.showinfo("Logged Out", "You have been logged out")
+        self.show_login()
+
+    
+
     def show_nav_bar(self):
         self.nav_bar.pack(fill='x')
 
     def hide_nav_bar(self):
         self.nav_bar.pack_forget()
+
+    
+
 
     def show_page(self, page_class):
         frame = self.frames[page_class.__name__]
@@ -171,6 +198,8 @@ class LoginPage(tk.Frame):
         tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
         tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, pady=10, padx=10)
 
+   
+
     def signin(self):
         username = self.entry_username.get()
         password = self.entry_password.get()
@@ -181,9 +210,10 @@ class LoginPage(tk.Frame):
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
             self.controller.show_nav_bar()
-            self.controller.show_home()
+
         else:
             messagebox.showerror("Error", "Invalid credentials.")
+
 
 class SignUpPage(tk.Toplevel):
     def __init__(self, parent):
@@ -236,6 +266,16 @@ class SignUpPage(tk.Toplevel):
             "last_name": last_name,
             "password": password,
         }
+
+        users_settings[username] = {
+            "password": password,
+            "first_name": first_name,
+            "last_name": last_name,
+            "profile_picture": "",
+            "default_view": ""
+        }
+
+
         save_users(users)
         messagebox.showinfo("Success", "Account created successfully!")
         self.destroy()
@@ -267,7 +307,7 @@ class TablePage(tk.Frame):
                                 command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=10)
 
-        # Assignment Treeview
+        # Assignment Review
         self.tree = ttk.Treeview(
             self,
             columns=("Priority", "Title", "Due Date in YYYY-MM-DD format", "Class", "Type", "Completed"),
@@ -551,6 +591,67 @@ class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
         tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+
+        # User Profile Section
+        tk.Label(self, text="First Name:", bg="white").pack(pady=5)
+        self.first_name_entry = tk.Entry(self)
+        self.first_name_entry.pack(pady=5)
+
+        tk.Label(self, text="Last Name:", bg="white").pack(pady=5)
+        self.last_name_entry = tk.Entry(self)
+        self.last_name_entry.pack(pady=5)
+
+        tk.Label(self, text="Profile Picture:", bg="white").pack(pady=5)
+        self.image_label = tk.Label(self, bg="white")
+        self.image_label.pack(pady=5)
+        tk.Button(self, text="Upload Image", command=self.upload_image).pack(pady=5)
+
+        # Default View Selection
+        tk.Label(self, text="Default View:", bg="white").pack(pady=5)
+        self.default_view = tk.StringVar()
+        self.default_view.set("Home")
+        self.view_options = ["Table", "Calendar",  "Todo", "Progress"]
+        self.view_menu = ttk.Combobox(self, textvariable=self.default_view, values=self.view_options)
+        self.view_menu.pack(pady=5)
+
+        tk.Button(self, text="Save Settings", command=self.save_settings).pack(pady=10)
+
+        self.load_settings()
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+        if file_path:
+            self.image_label.config(text=f"Selected: {os.path.basename(file.path)}")
+            self.profile_picture = file_path
+
+    def save_settings(self):
+        settings = {
+            "first_name": self.first_name_entry.get(),
+            "last_name": self.last_name_entry.get(),
+            "profile_picture": getattr(self, "profile_picture", ""),
+            "default_view": self.default_view.get()
+        }
+
+        with open("user_settings.json", "w") as file:
+            json.dump(settings, file)
+
+    def load_settings(self):
+        if os.path.exists("user_settings.json"):
+            with open("user_settings.json", "r") as file:
+                settings = json.load(file)
+                self.first_name_entry.insert(0, settings.get("first_name", ""))
+                self.last_name_entry.insert(0, settings.get("last_name", ""))
+                self.default_view.set(settings.get("default_view", "Home"))
+
+                if settings.get("profile_picture"):
+                    self.image_label.config(text=f"Selected: {os.path.basename(settings['profile_picture'])}")
+    
+
+
+                                        
+
+
+
 
 if __name__ == "__main__":
     app = AssignmentTrackerApp()
