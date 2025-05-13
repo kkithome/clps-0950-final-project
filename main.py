@@ -1,19 +1,6 @@
-<<<<<<< HEAD
-import tkinter as tk
-from tkinter import ttk
-
-# Assignment data model
-class Assignment:
-    def __init__(self, title, due_date, class_name, assignment_type, completed=False):
-        self.title = title
-        self.due_date = due_date
-        self.class_name = class_name
-        self.assignment_type = assignment_type
-        self.completed = completed
 
 
 # Main application
-=======
 import tkinter as tk #python graphical user interfaces
 from tkinter import ttk #themed tkinter that is more modern
 from tkinter import messagebox #shows popup alert boxes
@@ -125,38 +112,24 @@ class AssignmentTrackerApp(tk.Tk):
 
         # List to store assignment objects
         self.assignments = [
-<<<<<<< HEAD
             Assignment("Problem Set 1", "2025-05-10", "Physics", "Homework"),
             Assignment("Essay Draft", "2025-05-12", "English", "Writing", completed=True)
-=======
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
         ]
 
         self.nav_bar = tk.Frame(self, bg="#eee", height=50)
 
         buttons = [
             ("Home", self.show_home),
-<<<<<<< HEAD
             ("Table", self.show_table),
-=======
-            ("Assignments", self.show_table),
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
             ("Calendar", self.show_calendar),
             ("To-Do", self.show_todo),
             ("Progress", self.show_progress),
             ("Settings", self.show_settings),
         ]
 
-<<<<<<< HEAD
-        for name, command in buttons:
-            tk.Button(nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
-
-        # Container for pages
-=======
         #for name, command in buttons:
             #tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
 
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
         self.container = tk.Frame(self, bg="white")
         self.container.pack(fill="both", expand=True)
 
@@ -164,23 +137,11 @@ class AssignmentTrackerApp(tk.Tk):
         self.show_home()
 
     def init_pages(self):
-<<<<<<< HEAD
-        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
-=======
         for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage, LoginPage):
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
-<<<<<<< HEAD
-
-    def show_page(self, page_class):
-        frame = self.frames[page_class.__name__]
-        if hasattr(frame, 'refresh'):
-            frame.refresh()  # call refresh if the page supports it
-        frame.tkraise()
-=======
         self.show_login()
 
     def show_nav_bar(self):
@@ -194,7 +155,6 @@ class AssignmentTrackerApp(tk.Tk):
         frame.tkraise()
         if hasattr(frame, 'refresh'):
             frame.refresh()
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 
     def show_home(self): self.show_page(HomePage)
@@ -203,13 +163,10 @@ class AssignmentTrackerApp(tk.Tk):
     def show_todo(self): self.show_page(ToDoPage)
     def show_progress(self): self.show_page(ProgressPage)
     def show_settings(self): self.show_page(SettingsPage)
-<<<<<<< HEAD
-=======
     def show_login(self): self.show_page(LoginPage)
     
 
 
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 
 # Individual pages
@@ -220,8 +177,6 @@ class HomePage(tk.Frame):
         label.pack(pady=50)
 
 
-<<<<<<< HEAD
-=======
         login_frame = tk.Frame(self, bg="white")
         login_frame.pack(pady=20)
 
@@ -318,32 +273,10 @@ class SignUpPage(tk.Toplevel):
         self.destroy()
 
 
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 class TablePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
         self.controller = controller
-<<<<<<< HEAD
-        label = tk.Label(self, text="Assignment Table", font=("Helvetica", 20), bg="white")
-        label.pack(pady=20)
-
-        self.tree = ttk.Treeview(self, columns=("Title", "Due Date", "Class", "Type", "Completed"), show='headings')
-        for col in self.tree["columns"]:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor="center")
-
-        self.tree.pack(fill="both", expand=True)
-
-    def refresh(self):
-        # Clear previous entries
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        # Insert updated assignment list
-        for a in self.controller.assignments:
-            self.tree.insert("", "end", values=(a.title, a.due_date, a.class_name, a.assignment_type, "Yes" if a.completed else "No"))
-
-=======
 
         top_frame = tk.Frame(self, bg="white")
         top_frame.pack(fill="x", pady=(20, 0))
@@ -448,16 +381,10 @@ class TablePage(tk.Frame):
                  a.assignment_type, 
                  "Yes" if a.completed else "No"
                 ))
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-<<<<<<< HEAD
-        label = tk.Label(self, text="Calendar View Page", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
-
-=======
         self.controller = controller
 
 # Title
@@ -532,17 +459,11 @@ def show_assignments_for_selected_date(self, event):
 
         if not found:
             self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 
 class ToDoPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-<<<<<<< HEAD
-        label = tk.Label(self, text="To-Do List Page", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
-
-=======
         self.controller = controller
 
         tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=20)
@@ -567,36 +488,18 @@ class ToDoPage(tk.Frame):
                 due = a.due_date
                 pri = "★ " if a.priority else ""
                 self.todo_listbox.insert(tk.END, f"{pri}{a.title} (Due: {due}) — {a.class_name} [{a.assignment_type}]")
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-<<<<<<< HEAD
-        label = tk.Label(self, text="Progress Tracker Page", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
-
-=======
         tk.Label(self, text="Progress Page", font=("Helvetica", 20), bg="white").pack(pady=20)
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 
 class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-<<<<<<< HEAD
-        label = tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white")
-        label.pack(pady=50)
-
-
-# Run the application
-if __name__ == "__main__":
-    app = AssignmentTrackerApp()
-    app.mainloop()
-=======
         tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white").pack(pady=20)
 
 if __name__ == "__main__":
     app = AssignmentTrackerApp()
     app.mainloop()
->>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
