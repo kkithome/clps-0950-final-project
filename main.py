@@ -1,3 +1,19 @@
+<<<<<<< HEAD
+import tkinter as tk
+from tkinter import ttk
+
+# Assignment data model
+class Assignment:
+    def __init__(self, title, due_date, class_name, assignment_type, completed=False):
+        self.title = title
+        self.due_date = due_date
+        self.class_name = class_name
+        self.assignment_type = assignment_type
+        self.completed = completed
+
+
+# Main application
+=======
 import tkinter as tk #python graphical user interfaces
 from tkinter import ttk #themed tkinter that is more modern
 from tkinter import messagebox #shows popup alert boxes
@@ -89,14 +105,15 @@ def delete_user_prompt():
 
 # Assignment data model
 class Assignment:
-    def __init__(self, title, due_date, class_name, assignment_type, completed=False, priority=False):
+    def __init__(self, title, due_date, class_name, assignment_type, completed=False):
         self.title = title
-        self.due_date = due_date 
+        self.due_date = due_date
         self.class_name = class_name
         self.assignment_type = assignment_type
         self.completed = completed
-        self.priority = priority  # add priority to make it go 'to do' list 
 
+
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 class AssignmentTrackerApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -104,33 +121,66 @@ class AssignmentTrackerApp(tk.Tk):
         self.geometry("800x600")
         self.configure(bg="white")
 
-        self.current_user = None
-        self.assignments = []
+        self.frames = {}
+
+        # List to store assignment objects
+        self.assignments = [
+<<<<<<< HEAD
+            Assignment("Problem Set 1", "2025-05-10", "Physics", "Homework"),
+            Assignment("Essay Draft", "2025-05-12", "English", "Writing", completed=True)
+=======
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
+        ]
 
         self.nav_bar = tk.Frame(self, bg="#eee", height=50)
 
         buttons = [
             ("Home", self.show_home),
+<<<<<<< HEAD
+            ("Table", self.show_table),
+=======
             ("Assignments", self.show_table),
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
             ("Calendar", self.show_calendar),
             ("To-Do", self.show_todo),
             ("Progress", self.show_progress),
             ("Settings", self.show_settings),
         ]
 
+<<<<<<< HEAD
         for name, command in buttons:
-            tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
+            tk.Button(nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
 
+        # Container for pages
+=======
+        #for name, command in buttons:
+            #tk.Button(self.nav_bar, text=name, command=command, bg="#ddd").pack(side='left', padx=5, pady=10)
+
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
         self.container = tk.Frame(self, bg="white")
         self.container.pack(fill="both", expand=True)
 
-        self.frames = {}
-        for PageClass in (LoginPage, HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
+        self.init_pages()
+        self.show_home()
+
+    def init_pages(self):
+<<<<<<< HEAD
+        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage):
+=======
+        for PageClass in (HomePage, TablePage, CalendarPage, ToDoPage, ProgressPage, SettingsPage, LoginPage):
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
+<<<<<<< HEAD
 
+    def show_page(self, page_class):
+        frame = self.frames[page_class.__name__]
+        if hasattr(frame, 'refresh'):
+            frame.refresh()  # call refresh if the page supports it
+        frame.tkraise()
+=======
         self.show_login()
 
     def show_nav_bar(self):
@@ -144,6 +194,8 @@ class AssignmentTrackerApp(tk.Tk):
         frame.tkraise()
         if hasattr(frame, 'refresh'):
             frame.refresh()
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
+
 
     def show_home(self): self.show_page(HomePage)
     def show_table(self): self.show_page(TablePage)
@@ -151,9 +203,34 @@ class AssignmentTrackerApp(tk.Tk):
     def show_todo(self): self.show_page(ToDoPage)
     def show_progress(self): self.show_page(ProgressPage)
     def show_settings(self): self.show_page(SettingsPage)
-    def show_login(self):
-        self.hide_nav_bar()
-        self.show_page(LoginPage)
+<<<<<<< HEAD
+=======
+    def show_login(self): self.show_page(LoginPage)
+    
+
+
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
+
+
+# Individual pages
+class HomePage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="white")
+        label = tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+
+<<<<<<< HEAD
+=======
+        login_frame = tk.Frame(self, bg="white")
+        login_frame.pack(pady=20)
+
+        login_button = tk.Button(login_frame, text="Click Here to Login",
+                                 font=("Helvetica", 16, "bold"), bg="black", 
+                                 fg="blue", command=lambda: controller.show_login())
+        
+        login_button.pack()
+
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -240,17 +317,34 @@ class SignUpPage(tk.Toplevel):
         messagebox.showinfo("Success", "Account created successfully!")
         self.destroy()
 
-class HomePage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="white")
-        tk.Label(self, text="Welcome to the Assignment Tracker!", font=("Helvetica", 20), bg="white").pack(pady=50)
 
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 class TablePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
         self.controller = controller
+<<<<<<< HEAD
+        label = tk.Label(self, text="Assignment Table", font=("Helvetica", 20), bg="white")
+        label.pack(pady=20)
 
-        # Top toolbar
+        self.tree = ttk.Treeview(self, columns=("Title", "Due Date", "Class", "Type", "Completed"), show='headings')
+        for col in self.tree["columns"]:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor="center")
+
+        self.tree.pack(fill="both", expand=True)
+
+    def refresh(self):
+        # Clear previous entries
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Insert updated assignment list
+        for a in self.controller.assignments:
+            self.tree.insert("", "end", values=(a.title, a.due_date, a.class_name, a.assignment_type, "Yes" if a.completed else "No"))
+
+=======
+
         top_frame = tk.Frame(self, bg="white")
         top_frame.pack(fill="x", pady=(20, 0))
 
@@ -345,115 +439,75 @@ class TablePage(tk.Frame):
             ]
             self.tree.delete(item)
 
-        messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
-
-    def edit_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No Selection", "Please select an assignment to edit.")
-            return
-
-        item = selected[0]
-        values = self.tree.item(item, "values")
-        title = values[1]
-        due_date = values[2]
-
-        popup = tk.Toplevel(self)
-        popup.title("Edit Assignment")
-        popup.geometry("300x350")
-        popup.grab_set()
-
-        fields = ["Title", "Due Date", "Class Name", "Type"]
-        entries = {}
-
-        for i, field in enumerate(fields):
-            tk.Label(popup, text=field).pack(pady=(10 if i == 0 else 5, 0))
-            entry = tk.Entry(popup)
-            entry.insert(0, values[i + 1])  # shift index: skip priority
-            entry.pack()
-            entries[field] = entry
-
-        completed_var = tk.BooleanVar(value=(values[5] == "Yes"))
-        priority_var = tk.BooleanVar(value=(values[0] == "★"))
-        tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=5)
-        tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
-
-        def save():
-            # Remove old
-            self.controller.assignments = [
-                a for a in self.controller.assignments
-                if not (a.title == title and a.due_date == due_date)
-            ]
-
-            updated = Assignment(
-                entries["Title"].get(),
-                entries["Due Date"].get(),
-                entries["Class Name"].get(),
-                entries["Type"].get(),
-                completed=completed_var.get(),
-                priority=priority_var.get()
-            )
-
-            self.controller.assignments.append(updated)
-            self.refresh()
-            popup.destroy()
-
-        tk.Button(popup, text="Save", command=save, bg="#f0ad4e", fg="white").pack(pady=10)
-
+        for a in self.controller.assignments:
+            self.tree.insert("", "end", values=(
+                 "★" if a.priority else "",  # Show star if priority is True
+                 a.title, 
+                 a.due_date, 
+                 a.class_name, 
+                 a.assignment_type, 
+                 "Yes" if a.completed else "No"
+                ))
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 class CalendarPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
+<<<<<<< HEAD
+        label = tk.Label(self, text="Calendar View Page", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+=======
         self.controller = controller
 
-        # Title
-        tk.Label(self, text="Assignment Calendar", font=("Courier New", 20), bg="white").pack(pady=10)
+# Title
+tk.Label(self, text="Assignment Calendar", font=("Courier New", 20), bg="white").pack(pady=10)
 
-        # Outer horizontal frame
-        content_frame = tk.Frame(self, bg="white")
-        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+# Outer horizontal frame
+content_frame = tk.Frame(self, bg="white")
+content_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # Left: Calendar
-        self.calendar = Calendar(
-            content_frame,
-            selectmode="day",
-            date_pattern="yyyy-mm-dd",
-            showweeknumbers=False,
-            firstweekday="sunday",
-            background="white",
-            foreground="black",
-            headersbackground="#eeeeee",
-            headersforeground="black",
-            weekendbackground="#f9f9f9",
-            weekendforeground="gray",
-            selectbackground="#4CAF50",
-            selectforeground="white"
-        )
-        self.calendar.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 20))
+# Left: Calendar
+self.calendar = Calendar(
+        content_frame,
+        selectmode="day",
+        date_pattern="yyyy-mm-dd",
+        showweeknumbers=False,
+        firstweekday="sunday",
+        background="white",
+        foreground="black",
+        headersbackground="#eeeeee",
+        headersforeground="black",
+        weekendbackground="#f9f9f9",
+        weekendforeground="gray",
+        selectbackground="#4CAF50",
+        selectforeground="white"
+)
+self.calendar.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 20))
 
-        # Right column with two vertical sections
-        top_right = tk.Frame(content_frame, bg="white", height=100)
-        bottom_right = tk.Frame(content_frame, bg="white")
+# Right column with two vertical sections
+top_right = tk.Frame(content_frame, bg="white", height=100)
+bottom_right = tk.Frame(content_frame, bg="white")
         
-        top_right.grid(row=0, column=1, sticky="nsew")
-        bottom_right.grid(row=1, column=1, sticky="nsew")
+top_right.grid(row=0, column=1, sticky="nsew")
+bottom_right.grid(row=1, column=1, sticky="nsew")
 
-        # Label + Listbox in the bottom-right quadrant
-        tk.Label(bottom_right, text="Assignments for Selected Date:", font=("Helvetica", 14), bg="white").pack(anchor="w")
+ # Label + Listbox in the bottom-right quadrant
+tk.Label(bottom_right, text="Assignments for Selected Date:", font=("Helvetica", 14), bg="white").pack(anchor="w")
 
-        self.assignment_listbox = tk.Listbox(bottom_right, width=50)
-        self.assignment_listbox.pack(fill="both", expand=True, pady=5)
+self.assignment_listbox = tk.Listbox(bottom_right, width=50)
+self.assignment_listbox.pack(fill="both", expand=True, pady=5)
 
         # Grid weight configuration
-        content_frame.columnconfigure(0, weight=1)
-        content_frame.columnconfigure(1, weight=1)
-        content_frame.rowconfigure(0, weight=1)
-        content_frame.rowconfigure(1, weight=1)
+content_frame.columnconfigure(0, weight=1)
+content_frame.columnconfigure(1, weight=1)
+content_frame.rowconfigure(0, weight=1)
+content_frame.rowconfigure(1, weight=1)
 
         # Event binding
-        self.calendar.bind("<<CalendarSelected>>", self.show_assignments_for_selected_date)
+self.calendar.bind("<<CalendarSelected>>", self.show_assignments_for_selected_date)
 
-    def refresh(self):
+def refresh(self):
         self.assignment_listbox.delete(0, tk.END)
         self.calendar.calevent_remove('all')
 
@@ -466,7 +520,7 @@ class CalendarPage(tk.Frame):
 
         self.calendar.tag_config('due', background='red', foreground='white')
 
-    def show_assignments_for_selected_date(self, event):
+def show_assignments_for_selected_date(self, event):
         selected_date = self.calendar.get_date()
         self.assignment_listbox.delete(0, tk.END)
         found = False
@@ -478,22 +532,71 @@ class CalendarPage(tk.Frame):
 
         if not found:
             self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
+
 
 class ToDoPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        tk.Label(self, text="To-Do Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+<<<<<<< HEAD
+        label = tk.Label(self, text="To-Do List Page", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+=======
+        self.controller = controller
+
+        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=20)
+
+        self.todo_listbox = tk.Listbox(self, width=100)
+        self.todo_listbox.pack(pady=10, fill="both", expand=True)
+
+    def refresh(self):
+        self.todo_listbox.delete(0, tk.END)
+
+        # Filter upcoming and/or prioritized assignments
+        today = datetime.today()
+        sorted_assignments = sorted(
+            [a for a in self.controller.assignments if not a.completed],
+            key=lambda a: (not a.priority, datetime.strptime(a.due_date, "%Y-%m-%d"))
+        )
+
+        if not sorted_assignments:
+            self.todo_listbox.insert(tk.END, "No pending assignments.")
+        else:
+            for a in sorted_assignments:
+                due = a.due_date
+                pri = "★ " if a.priority else ""
+                self.todo_listbox.insert(tk.END, f"{pri}{a.title} (Due: {due}) — {a.class_name} [{a.assignment_type}]")
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
+<<<<<<< HEAD
+        label = tk.Label(self, text="Progress Tracker Page", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+=======
         tk.Label(self, text="Progress Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
+
 
 class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
+<<<<<<< HEAD
+        label = tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white")
+        label.pack(pady=50)
+
+
+# Run the application
+if __name__ == "__main__":
+    app = AssignmentTrackerApp()
+    app.mainloop()
+=======
         tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white").pack(pady=20)
 
 if __name__ == "__main__":
     app = AssignmentTrackerApp()
     app.mainloop()
+>>>>>>> f153907709c9fc67194e0bf4c67809e20c603418
