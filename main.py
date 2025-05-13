@@ -512,7 +512,30 @@ class ToDoPage(tk.Frame):
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        tk.Label(self, text="Progress Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+        self.controller = controller
+
+        tk.Label(self, text="Progress Tracker", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        self.progress_label = tk.Label(self, text="", font=("Helvetica", 14), bg="white")
+        self.progress_label.pack(pady=10)
+
+        self.progress_bar = ttk.Progressbar(self, orient="horizontal", length=400, mode="determinate")
+        self.progress_bar.pack(pady=10)
+
+        self.refresh()
+
+    def refresh(self):
+        total = len(self.controller.assignments)
+        completed = sum(1 for a in self.controller.assignments if a.completed)
+
+        if total == 0:
+            percent = 0
+        else:
+            percent = (completed / total) * 100
+
+        self.progress_label.config(text=f"Completed {completed} out of {total} assignments ({percent:.1f}%)")
+        self.progress_bar["value"] = percent
+
 
 class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
