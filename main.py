@@ -33,13 +33,13 @@ def admin_login():
     login_window = tk.Toplevel()
     login_window.title("Admin Login")
     login_window.geometry("300x200")
-
-#add a label and in put field for the admin udername
+    
+    #add a label and in put field for the admin udername
     tk.Label(login_window, text="Admin Username").pack(pady=5)
     entry_username = tk.Entry(login_window)
     entry_username.pack(pady=5)
 
-#add a label and password field (hides input with *)
+    #add a label and password field (hides input with *)
     tk.Label(login_window, text="admin Password").pack(pady=5)
     entry_password = tk.Entry(login_window, show="*")
     entry_password.pack(pady=5)
@@ -57,6 +57,46 @@ def admin_login():
             messagebox.showerror("Error", "Invalid Admin credentials")
      #Adds a login button that runs the verify_admin function when clicked       
     tk.Button(login_window, text="Login", command=verify_admin).pack(pady=10)
+
+class ToDoPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="white")
+        self.controller = controller
+
+        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        # Frame for the listbox and scrollbar
+        list_frame = tk.Frame(self, bg="white")
+        list_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.todo_listbox = tk.Listbox(list_frame, font=("Helvetica", 12))
+        self.todo_listbox.pack(side="left", fill="both", expand=True)
+
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side="right", fill="y")
+        self.todo_listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.todo_listbox.yview)
+
+    def refresh(self):
+        # Clear the listbox
+        self.todo_listbox.delete(0, tk.END)
+
+        # Filter for incomplete assignments
+        assignments = [
+            a for a in self.controller.assignments if not a.completed
+        ]
+
+        # Sort by: Priority first, then due date
+        assignments.sort(key=lambda a: (not a.priority, a.due_date))
+
+        if not assignments:
+            self.todo_listbox.insert(tk.END, "🎉 No assignments to do!")
+            return
+
+        # Display formatted entries
+        for a in assignments:
+            entry = f"{'★' if a.priority else ' '} {a.due_date} - {a.title} ({a.class_name})"
+            self.todo_listbox.insert(tk.END, entry)
 
 def delete_user_prompt():
         #create a popup window for deleting a user
@@ -111,8 +151,8 @@ class AssignmentTrackerApp(tk.Tk):
         ]
 
         # Navigation bar
-        nav_bar = tk.Frame(self, bg="#eee", height=50)
-        nav_bar.pack(fill='x')
+        self.nav_bar = tk.Frame(self, bg="#eee", height=50)
+        self.nav_bar.pack(fill='x')
 
         buttons = [
             ("Home", self.show_home),
@@ -160,10 +200,6 @@ class AssignmentTrackerApp(tk.Tk):
     def show_settings(self): self.show_page(SettingsPage)
     def show_login(self): self.show_page(LoginPage)
     
-
-
-
-
 # Individual pages
 class HomePage(tk.Frame):
     def __init__(self, parent, controller):
@@ -313,18 +349,23 @@ class TablePage(tk.Frame):
 
         completed_var = tk.BooleanVar()
         tk.Checkbutton(popup, text="Completed", variable=completed_var).pack(pady=10)
+        
+        priority_var = tk.BooleanVar()
+        tk.Checkbutton(popup, text="High Priority", variable=priority_var).pack(pady=5)
 
-        def save():
-            new_assignment = Assignment(
-                entries["Title"].get(),
-                entries["Due Date"].get(),
-                entries["Class Name"].get(),
-                entries["Type"].get(),
-                completed=completed_var.get()
-            )
-            self.controller.assignments.append(new_assignment)
-            self.refresh()
-            popup.destroy()
+        new_assignment = Assignment(
+            entries["Title"].get(),
+            entries["Due Date"].get(),
+            entries["Class Name"].get(),
+            entries["Type"].get(),
+            completed=completed_var.get(),
+            priority=priority_var.get()
+        )
+
+        self.controller.assignments.append(new_assignment)
+        self.refresh()
+        popup.destroy()
+ 
 
         tk.Button(popup, text="Add", command=save, bg="#4CAF50", fg="white").pack(pady=10)
 
@@ -404,6 +445,7 @@ class CalendarPage(tk.Frame):
                 self.calendar.calevent_create(due_date, f"{a.title}", 'due')
             except ValueError:
                 continue
+        
 
         self.calendar.tag_config('due', background='red', foreground='white')
 
@@ -425,28 +467,45 @@ class ToDoPage(tk.Frame):
         super().__init__(parent, bg="white")
         self.controller = controller
 
-        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=20)
+        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
 
-        self.todo_listbox = tk.Listbox(self, width=100)
-        self.todo_listbox.pack(pady=10, fill="both", expand=True)
+        # Frame for the listbox and scrollbar
+        list_frame = tk.Frame(self, bg="white")
+        list_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.todo_listbox = tk.Listbox(list_frame, font=("Helvetica", 12))
+        self.todo_listbox.pack(side="left", fill="both", expand=True)
+
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side="right", fill="y")
+        self.todo_listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.todo_listbox.yview)
 
     def refresh(self):
+        # Clear the listbox
         self.todo_listbox.delete(0, tk.END)
 
-        # Filter upcoming and/or prioritized assignments
-        today = datetime.today()
-        sorted_assignments = sorted(
-            [a for a in self.controller.assignments if not a.completed],
-            key=lambda a: (not a.priority, datetime.strptime(a.due_date, "%Y-%m-%d"))
-        )
+        # Filter for incomplete assignments
+        assignments = [
+            a for a in self.controller.assignments if not a.completed
+        ]
 
-        if not sorted_assignments:
-            self.todo_listbox.insert(tk.END, "No pending assignments.")
-        else:
-            for a in sorted_assignments:
-                due = a.due_date
-                pri = "★ " if a.priority else ""
-                self.todo_listbox.insert(tk.END, f"{pri}{a.title} (Due: {due}) — {a.class_name} [{a.assignment_type}]")
+        # Sort by: Priority first, then due date
+        assignments.sort(key=lambda a: (not a.priority, a.due_date))
+
+        if not assignments:
+            self.todo_listbox.insert(tk.END, "🎉 No assignments to do!")
+            return
+
+        # Display formatted entries
+        for a in self.controller.assignments:
+            if a.due_date == selected_date:
+                self.assignment_listbox.insert(tk.END, f"{a.title} - {a.class_name} - {a.assignment_type}")
+                found = True
+            if not found:
+                self.assignment_listbox.insert(tk.END, "No assignments due on this date.")
+
+
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
