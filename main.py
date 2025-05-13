@@ -270,12 +270,12 @@ class TablePage(tk.Frame):
         # Assignment Treeview
         self.tree = ttk.Treeview(
             self,
-            columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
+            columns=("Priority", "Title", "Due Date in YYYY-MM-DD format", "Class", "Type", "Completed"),
             show="headings"
         )
         self.tree.heading("Priority", text="★")
         self.tree.heading("Title", text="Title")
-        self.tree.heading("Due Date", text="Due Date")
+        self.tree.heading("Due Date in YYYY-MM-DD format", text="Due Date")
         self.tree.heading("Class", text="Class Name")
         self.tree.heading("Type", text="Type")
         self.tree.heading("Completed", text="Completed")
@@ -300,7 +300,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date", "Class Name", "Type"]
+        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -317,12 +317,20 @@ class TablePage(tk.Frame):
         def save():
             new_assignment = Assignment(
                 entries["Title"].get(),
-                entries["Due Date"].get(),
+                entries["Due Date in YYYY-MM-DD format"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
                 priority=priority_var.get()
             )
+            due_date = entries["Due Date in YYYY-MM-DD format"].get()
+
+            try:
+                datetime.strptime(due_date, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showerror("Invalid Date", "Please enter Due date in YYYY-MM-DD format.")
+            return
+            
             self.controller.assignments.append(new_assignment)
             self.refresh()
             popup.destroy()
@@ -363,7 +371,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date", "Class Name", "Type"]
+        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -387,7 +395,7 @@ class TablePage(tk.Frame):
 
             updated = Assignment(
                 entries["Title"].get(),
-                entries["Due Date"].get(),
+                entries["Due Date in YYYY-MM-DD format"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
@@ -458,6 +466,8 @@ class CalendarPage(tk.Frame):
         self.calendar.calevent_remove('all')
 
         for a in self.controller.assignments:
+
+            
             try:
                 due_date = datetime.strptime(a.due_date, "%Y-%m-%d")
                 self.calendar.calevent_create(due_date, f"{a.title}", 'due')
