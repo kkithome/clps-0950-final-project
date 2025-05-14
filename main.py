@@ -139,7 +139,6 @@ class Assignment:
 
     def delete_assignments(username, title):
         assignments = load_assignments()
-
         if username in assignments and title in assignments[username]["assignments"]:
             del assignments[username]["assignments"][title]
             save_assignments(assignments)
