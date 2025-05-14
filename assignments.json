@@ -1,0 +1,14 @@
+{
+    "example": {
+        "assignments": {
+            "Example": {
+                "title": "Example",
+                "due_date": "2025-05-20",
+                "class_name": "Computer",
+                "assignment_type": "Quiz",
+                "completed": false,
+                "priority": true
+            }
+        }
+    }
+}

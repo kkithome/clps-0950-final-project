@@ -1,28 +1,54 @@
 import tkinter as tk #python graphical user interfaces
 from tkinter import ttk #themed tkinter that is more modern
-from tkinter import messagebox #shows popup alert boxes
+from tkinter import messagebox
+from tkinter import filedialog #shows popup alert boxes
 from tkcalendar import Calendar 
 from datetime import datetime
+from PIL import Image, ImageTk
 import json
 import os
 
 
 #Loading past user data
 USER_FILE = "users.json"
+SETTINGS_FILE = "users_settings.json"
+ASSIGNMENTS_FILE = "assignments.json"
 
 def load_users():
     try:
         with open(USER_FILE, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    
+def load_settings():
+    try: 
+        with open(SETTINGS_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError,json.JSONDecodeError):
+        return {}
+    
+def load_assignments():
+    try: 
+        with open(ASSIGNMENTS_FILE, "r") as f:
+            return json.load(f)
+    except (FileExistsError,json.JSONDecodeError):
         return {}
 
-#Creating new user data in readable JSON format
+
 def save_users(users):
     with open(USER_FILE, "w") as f: 
         json.dump(users, f, indent=4)
 
+def save_settings(settings):
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings, f, indent=4)
+
+
+
 users = load_users()
+settings = load_settings()
+assignments = load_assignments()
 
 #Creates an Admin page -> we need to add page for this
 def is_admin(username):
@@ -40,7 +66,7 @@ def admin_login():
     entry_username.pack(pady=5)
 
 #add a label and password field (hides input with *)
-    tk.Label(login_window, text="admin Password").pack(pady=5)
+    tk.Label(login_window, text="Admin Password").pack(pady=5)
     entry_password = tk.Entry(login_window, show="*")
     entry_password.pack(pady=5)
 
@@ -55,6 +81,7 @@ def admin_login():
             delete_user_prompt()
         else:
             messagebox.showerror("Error", "Invalid Admin credentials")
+
      #Adds a login button that runs the verify_admin function when clicked       
     tk.Button(login_window, text="Login", command=verify_admin).pack(pady=10)
 
@@ -88,6 +115,10 @@ def delete_user_prompt():
         tk.Button(delete_window, text="Delete", command=delete_user).pack(pady=10)
 
 # Assignment data model
+def save_assignments(assignments):
+    with open(ASSIGNMENTS_FILE, "w") as f:
+        json.dump(assignments, f, indent=4)
+
 class Assignment:
     def __init__(self, title, due_date, class_name, assignment_type, completed=False, priority=False):
         self.title = title
@@ -133,6 +164,14 @@ class AssignmentTrackerApp(tk.Tk):
 
         self.show_login()
 
+        tk.Button(self.nav_bar, text="Logout", command=self.logout).pack(side="right", padx=10, pady=5)
+
+    def logout(self):
+        self.current_user = None
+        messagebox.showinfo("Logged Out", "You have been logged out")
+        self.show_login()
+
+
     def show_nav_bar(self):
         self.nav_bar.pack(fill='x')
 
@@ -170,6 +209,52 @@ class LoginPage(tk.Frame):
 
         tk.Button(self, text="Sign In", command=self.signin).grid(row=2, column=0, pady=10, padx=10)
         tk.Button(self, text="Sign Up", command=lambda: SignUpPage(self)).grid(row=2, column=1, pady=10, padx=10)
+        tk.Button(self, text="Forgot Password?", command=self.forgot_password).grid(row=2, column=2, pady=10, padx=10)
+        
+
+    def forgot_password(self):
+        reset_window = tk.Toplevel()
+        reset_window.title("Reset Password")
+        reset_window.geometry("300x300")
+
+        tk.Label(reset_window, text="Enter Username:", bg="white").pack(pady=5)
+        entry_username = tk.Entry(reset_window)
+        entry_username.pack(pady=5)
+
+        tk.Label(reset_window, text="Enter New Password:", bg="white").pack(pady=5)
+        entry_new_password = tk.Entry(reset_window, show="*")
+        entry_new_password.pack(pady=5)
+
+        tk.Label(reset_window, text="Confirm New Password:", bg="white").pack(pady=5)
+        entry_confirmation = tk.Entry(reset_window, show="*")
+        entry_confirmation.pack(pady=5)
+
+        def reset():
+            username = entry_username.get()
+            new_password = entry_new_password.get()
+            confirm_password = entry_confirmation.get()
+            users = load_users()
+            settings = load_settings()
+
+            if username in users:
+                if new_password == confirm_password:
+                    users[username]["password"] = new_password
+                    settings[username]["password"] = new_password
+
+                    save_users(users)
+                    save_settings(settings)
+
+                    messagebox.showinfo("Success", "Password updated successfully")
+                    reset_window.destroy()
+
+                else:
+                    messagebox.showerror("Error", "Passwords do not match. Please try again")
+            else:
+                messagebox.showerror("Error", "Username not found.")
+
+        tk.Button(reset_window, text="Reset", command=reset).pack(pady=10).grid(row=0, column=1)
+
+   
 
     def signin(self):
         username = self.entry_username.get()
@@ -181,9 +266,20 @@ class LoginPage(tk.Frame):
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
             self.controller.show_nav_bar()
-            self.controller.show_home()
+
+            default_view = settings.get(username, {}).get("default_view", "Home")
+            page_mapping = {
+                "Home": HomePage, 
+                "Table": TablePage,
+                "Calendar": CalendarPage,
+                "Todo": ToDoPage,
+                "Progress": ProgressPage,
+            }
+            self.controller.show_page(page_mapping.get(default_view))
+
         else:
             messagebox.showerror("Error", "Invalid credentials.")
+
 
 class SignUpPage(tk.Toplevel):
     def __init__(self, parent):
@@ -236,6 +332,16 @@ class SignUpPage(tk.Toplevel):
             "last_name": last_name,
             "password": password,
         }
+
+        settings[username] = {
+            "password": password,
+            "first_name": first_name,
+            "last_name": last_name,
+            "profile_picture": "",
+            "default_view": ""
+        }
+
+
         save_users(users)
         messagebox.showinfo("Success", "Account created successfully!")
         self.destroy()
@@ -267,15 +373,15 @@ class TablePage(tk.Frame):
                                 command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=10)
 
-        # Assignment Treeview
+        # Assignment Review
         self.tree = ttk.Treeview(
             self,
-            columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
+            columns=("Priority", "Title", "Due Date in YYYY-MM-DD format", "Class", "Type", "Completed"),
             show="headings"
         )
         self.tree.heading("Priority", text="★")
         self.tree.heading("Title", text="Title")
-        self.tree.heading("Due Date", text="Due Date")
+        self.tree.heading("Due Date in YYYY-MM-DD format", text="Due Date")
         self.tree.heading("Class", text="Class Name")
         self.tree.heading("Type", text="Type")
         self.tree.heading("Completed", text="Completed")
@@ -300,7 +406,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date", "Class Name", "Type"]
+        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -315,15 +421,24 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
+            username = self.controller.current_user["username"]
             new_assignment = Assignment(
                 entries["Title"].get(),
-                entries["Due Date"].get(),
+                entries["Due Date in YYYY-MM-DD format"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
                 priority=priority_var.get()
             )
-            self.controller.assignments.append(new_assignment)
+            due_date = entries["Due Date in YYYY-MM-DD format"].get()
+
+            try:
+                datetime.strptime(due_date, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showerror("Invalid Date", "Please enter Due date in YYYY-MM-DD format.")
+                return
+            
+            new_assignment.add_to_user(username)
             self.refresh()
             popup.destroy()
 
@@ -338,12 +453,15 @@ class TablePage(tk.Frame):
         for item in selected_items:
             values = self.tree.item(item, "values")
             title = values[1]
-            due_date = values[2]
-            self.controller.assignments = [
-                a for a in self.controller.assignments
-                if not (a.title == title and a.due_date == due_date)
-            ]
-            self.tree.delete(item)
+
+            if Assignment.delete_assignments(self.controller.current_user["username"], title):
+                self.tree.delete(item)
+            #due_date = values[2]
+            #self.controller.assignments = [
+            #    a for a in self.controller.assignments
+            #    if not (a.title == title and a.due_date == due_date)
+            #]
+            #self.tree.delete(item)
 
         messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
 
@@ -363,7 +481,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date", "Class Name", "Type"]
+        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -387,7 +505,7 @@ class TablePage(tk.Frame):
 
             updated = Assignment(
                 entries["Title"].get(),
-                entries["Due Date"].get(),
+                entries["Due Date in YYYY-MM-DD format"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
@@ -458,6 +576,8 @@ class CalendarPage(tk.Frame):
         self.calendar.calevent_remove('all')
 
         for a in self.controller.assignments:
+
+            
             try:
                 due_date = datetime.strptime(a.due_date, "%Y-%m-%d")
                 self.calendar.calevent_create(due_date, f"{a.title}", 'due')
@@ -482,17 +602,130 @@ class CalendarPage(tk.Frame):
 class ToDoPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        tk.Label(self, text="To-Do Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+        self.controller = controller
+
+        tk.Label(self, text="To-Do List", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        self.todo_listbox = tk.Listbox(self, width=80, height=20)
+        self.todo_listbox.pack(padx=20, pady=10)
+
+        self.refresh()
+
+    def refresh(self):
+        self.todo_listbox.delete(0, tk.END)
+
+        # Separate starred and non-starred assignments
+        starred = []
+        regular = []
+
+        for a in self.controller.assignments:
+            item_str = f"★ {a.title}" if getattr(a, "starred", False) else a.title
+            display = f"{item_str} - {a.class_name} - {a.due_date}"
+            if getattr(a, "starred", False):
+                starred.append(display)
+            else:
+                regular.append(display)
+
+        for item in starred + regular:
+            self.todo_listbox.insert(tk.END, item)
 
 class ProgressPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
-        tk.Label(self, text="Progress Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+        self.controller = controller
+
+        tk.Label(self, text="Progress Tracker", font=("Helvetica", 20), bg="white").pack(pady=10)
+
+        self.progress_label = tk.Label(self, text="", font=("Helvetica", 14), bg="white")
+        self.progress_label.pack(pady=10)
+
+        self.progress_bar = ttk.Progressbar(self, orient="horizontal", length=400, mode="determinate")
+        self.progress_bar.pack(pady=10)
+
+        self.refresh()
+
+    def refresh(self):
+        total = len(self.controller.assignments)
+        completed = sum(1 for a in self.controller.assignments if a.completed)
+
+        if total == 0:
+            percent = 0
+        else:
+            percent = (completed / total) * 100
+
+        self.progress_label.config(text=f"Completed {completed} out of {total} assignments ({percent:.1f}%)")
+        self.progress_bar["value"] = percent
+
 
 class SettingsPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
         tk.Label(self, text="Settings Page", font=("Helvetica", 20), bg="white").pack(pady=20)
+
+        # User Profile Section
+        tk.Label(self, text="First Name:", bg="white").pack(pady=5)
+        self.first_name_entry = tk.Entry(self)
+        self.first_name_entry.pack(pady=5)
+
+        tk.Label(self, text="Last Name:", bg="white").pack(pady=5)
+        self.last_name_entry = tk.Entry(self)
+        self.last_name_entry.pack(pady=5)
+
+        tk.Label(self, text="Profile Picture:", bg="white").pack(pady=5)
+        self.image_label = tk.Label(self, bg="white")
+        self.image_label.pack(pady=5)
+        tk.Button(self, text="Upload Image", command=self.upload_image).pack(pady=5)
+
+        # Default View Selection
+        tk.Label(self, text="Default View:", bg="white").pack(pady=5)
+        self.default_view = tk.StringVar()
+        self.default_view.set("Home")
+        self.view_options = ["Table", "Calendar",  "Todo", "Progress"]
+        self.view_menu = ttk.Combobox(self, textvariable=self.default_view, values=self.view_options)
+        self.view_menu.pack(pady=5)
+
+        tk.Button(self, text="Save Settings", command=self.save_settings).pack(pady=10)
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename()
+        
+        if not file_path:
+            return
+        
+        self.image_label.config(text=f"Selected: {os.path.basename(file_path)}")
+        self.profile_picture = file_path
+
+        img = Image.open(file_path)
+        img = img.resize((100,100))
+        img_tk = ImageTk.PhotoImage(img)
+
+        self.image_label.config(image=img_tk)
+        self.image_label.image = img_tk
+
+    def save_settings(self):
+        settings = {
+            "first_name": self.first_name_entry.get(),
+            "last_name": self.last_name_entry.get(),
+            "profile_picture": getattr(self, "profile_picture", ""),
+            "default_view": self.default_view.get()
+        }
+
+        with open("user_settings.json", "w") as file:
+            json.dump(settings, file)
+        
+        messagebox.showinfo("Success", "Settings have been saved succesfully.")
+
+    def load_settings(self):
+        if os.path.exists("user_settings.json"):
+            with open("user_settings.json", "r") as file:
+                settings = json.load(file)
+                self.first_name_entry.insert(0, settings.get("first_name", ""))
+                self.last_name_entry.insert(0, settings.get("last_name", ""))
+                self.default_view.set(settings.get("default_view", "Home"))
+
+                if settings.get("profile_picture"):
+                    self.image_label.config(text=f"Selected: {os.path.basename(settings['profile_picture'])}")
+    
 
 if __name__ == "__main__":
     app = AssignmentTrackerApp()
