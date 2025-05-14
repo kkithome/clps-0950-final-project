@@ -33,11 +33,7 @@ def load_assignments():
     try: 
         with open(ASSIGNMENTS_FILE, "r") as f:
             return json.load(f)
-    except FileExistsError:
-        with open(ASSIGNMENTS_FILE, "w") as f: 
-            json.dump({}, f)
-        return {}
-    except json.JSONDecodeError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 def save_users(users):
@@ -49,8 +45,11 @@ def save_settings(settings):
         json.dump(settings, f, indent=4)
 
 def save_assignments(assignments):
-    with open(ASSIGNMENTS_FILE, "w") as f:
-        json.dump(assignments, f, indent=4)
+    try:
+        with open(ASSIGNMENTS_FILE, "w") as f:
+            json.dump(assignments, f, indent=4)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to save assignment: {e}")
 
 
 users = load_users()
@@ -136,6 +135,7 @@ class Assignment:
             assignments[username] = {"assignments": {}}
         assignments[username]["assignments"][self.title] = self.__dict__
         save_assignments(assignments)
+        messagebox.showinfo(f"Assignment '{self.title}' saved for user '{username}'.")
 
     def delete_assignments(username, title):
         assignments = load_assignments()
@@ -194,6 +194,22 @@ class AssignmentTrackerApp(tk.Tk):
         self.show_login()
 
         tk.Button(self.nav_bar, text="Logout", command=self.logout).pack(side="right", padx=10, pady=5)
+
+    def load_user_assignments(self, username):
+        all_assignments = load_assignments()
+        user_assignments = all_assignments.get(username, {}).get("assignments", {})
+
+        self.assignments = [
+            Assignment(
+                title=a["title"],
+                due_date=a["due_date"],
+                class_name=a["class_name"],
+                assignment_type=a["assignment_type"],
+                completed=a.get("completed", False),
+                priority=a.get("priority", False)
+            )
+            for a in user_assignments.values()
+        ]
 
     def logout(self):
         self.current_user = None
@@ -295,6 +311,8 @@ class LoginPage(tk.Frame):
             self.controller.current_user["username"] = username
             messagebox.showinfo("Success", "Login successful!")
             self.controller.show_nav_bar()
+
+            self.controller.load_user_assignments(username)
 
             default_view = settings.get(username, {}).get("default_view", "Home")
             page_mapping = {
@@ -427,14 +445,26 @@ class TablePage(tk.Frame):
 
             row_color = self.controller.class_colors[a.class_name]
 
+        for a in self.controller.assignments:
             self.tree.insert("", "end", values=(
+                "★" if a.priority else "",
+            a.title,
+            a.due_date,
+            a.class_name,
+            a.assignment_type,
+            "Yes" if a.completed else "No"
+            ))
+
+
+            """self.tree.insert("", "end", values=(
                 "★" if a.priority else "",
                 a.title,
                 a.due_date,
                 a.class_name,
                 a.assignment_type,
                 "Yes" if a.completed else "No"
-            ), tags=(a.class_name,))
+                
+            ), tags=(a.class_name,))"""
 
             self.tree.tag_configure(a.class_name, background=row_color)
 
@@ -462,6 +492,7 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
+            username = self.controller.current_user["username"]
             new_assignment = Assignment(
                 entries["Title"].get(),
                 entries["Due Date"].get(),
@@ -471,6 +502,7 @@ class TablePage(tk.Frame):
                 priority=priority_var.get()
             )
             self.controller.assignments.append(new_assignment)
+            new_assignment.add_to_user(username)
             self.refresh()
             popup.destroy()
 

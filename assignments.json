@@ -18,5 +18,49 @@
                 "priority": false
             }
         }
+    },
+    "example": {
+        "assignments": {
+            "example": {
+                "title": "example",
+                "due_date": "2025-05-21",
+                "class_name": "example",
+                "assignment_type": "quiz",
+                "completed": false,
+                "priority": false
+            },
+            "final project": {
+                "title": "final project",
+                "due_date": "2025-05-19",
+                "class_name": "Programming",
+                "assignment_type": "Project",
+                "completed": false,
+                "priority": true
+            },
+            "project": {
+                "title": "project",
+                "due_date": "2025-05-20",
+                "class_name": "programming",
+                "assignment_type": "project",
+                "completed": false,
+                "priority": true
+            },
+            "assignment": {
+                "title": "assignment",
+                "due_date": "2025-05-20",
+                "class_name": "lin alg",
+                "assignment_type": "assignment",
+                "completed": false,
+                "priority": true
+            },
+            "pop quiz": {
+                "title": "pop quiz",
+                "due_date": "2025-05-26",
+                "class_name": "algebra",
+                "assignment_type": "homework",
+                "completed": false,
+                "priority": false
+            }
+        }
     }
 }
