@@ -24,5 +24,10 @@
         "first_name": "Joe",
         "last_name": "mama",
         "password": "joemama"
+    },
+    "12345": {
+        "first_name": "Shayla",
+        "last_name": "Hillis",
+        "password": "12345"
     }
 }
