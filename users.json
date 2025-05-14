@@ -1,23 +1,20 @@
 {
-    "user1": {
-        "first_name": "user1",
-        "last_name": "user2",
-        "email": "user1@gmail.com",
-        "password": "example"
-    },
     "example": {
         "first_name": "example",
         "last_name": "example",
-        "password": "example"
+        "password": "example",
+        "role": "student"
     },
     "selamasfaw": {
         "first_name": "Selam",
         "last_name": "Asfaw",
-        "password": "naniandbaba"
+        "password": "naniandbaba",
+        "role": "student"
     },
-    "shahil": {
-        "first_name": "shayla",
-        "last_name": "hil",
-        "password": "12345"
+    "admin1": {
+        "first_name": "admin1",
+        "last_name": "admin",
+        "password": "admin1",
+        "role": "admin"
     }
 }
