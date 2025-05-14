@@ -4,6 +4,7 @@ from tkinter import messagebox #shows popup alert boxes
 from tkcalendar import Calendar 
 from datetime import datetime
 import json
+import random
 import os
 
 
@@ -106,6 +107,7 @@ class AssignmentTrackerApp(tk.Tk):
 
         self.current_user = None
         self.assignments = []
+        self.class_colors = {}
 
         self.nav_bar = tk.Frame(self, bg="#eee", height=50)
 
@@ -267,7 +269,7 @@ class TablePage(tk.Frame):
                                 command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=10)
 
-        # Assignment Treeview
+        # Treeview
         self.tree = ttk.Treeview(
             self,
             columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
@@ -284,7 +286,14 @@ class TablePage(tk.Frame):
 
     def refresh(self):
         self.tree.delete(*self.tree.get_children())
+
         for a in self.controller.assignments:
+            # Assign color if new class
+            if a.class_name not in self.controller.class_colors:
+                self.controller.class_colors[a.class_name] = self.generate_random_color()
+
+            row_color = self.controller.class_colors[a.class_name]
+
             self.tree.insert("", "end", values=(
                 "★" if a.priority else "",
                 a.title,
@@ -292,7 +301,12 @@ class TablePage(tk.Frame):
                 a.class_name,
                 a.assignment_type,
                 "Yes" if a.completed else "No"
-            ))
+            ), tags=(a.class_name,))
+
+            self.tree.tag_configure(a.class_name, background=row_color)
+
+    def generate_random_color(self):
+        return "#{:06x}".format(random.randint(0x444444, 0xDDDDDD))
 
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
@@ -337,8 +351,7 @@ class TablePage(tk.Frame):
 
         for item in selected_items:
             values = self.tree.item(item, "values")
-            title = values[1]
-            due_date = values[2]
+            title, due_date = values[1], values[2]
             self.controller.assignments = [
                 a for a in self.controller.assignments
                 if not (a.title == title and a.due_date == due_date)
@@ -355,8 +368,7 @@ class TablePage(tk.Frame):
 
         item = selected[0]
         values = self.tree.item(item, "values")
-        title = values[1]
-        due_date = values[2]
+        title, due_date = values[1], values[2]
 
         popup = tk.Toplevel(self)
         popup.title("Edit Assignment")
@@ -369,7 +381,7 @@ class TablePage(tk.Frame):
         for i, field in enumerate(fields):
             tk.Label(popup, text=field).pack(pady=(10 if i == 0 else 5, 0))
             entry = tk.Entry(popup)
-            entry.insert(0, values[i + 1])  # shift index: skip priority
+            entry.insert(0, values[i + 1])  # skip priority
             entry.pack()
             entries[field] = entry
 
@@ -379,7 +391,6 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
-            # Remove old
             self.controller.assignments = [
                 a for a in self.controller.assignments
                 if not (a.title == title and a.due_date == due_date)

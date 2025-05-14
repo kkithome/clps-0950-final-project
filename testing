@@ -1,0 +1,11 @@
+import tkinter as tk
+from tkcalendar import Calendar
+from datetime import datetime
+
+root = tk.Tk()
+root.title("Heatmap Test")
+
+cal = Calendar(root, selectmode='day', date_pattern='yyyy-mm-dd')
+cal.pack(padx=20, pady=20)
+
+root.mainloop()
