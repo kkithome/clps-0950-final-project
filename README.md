@@ -28,6 +28,7 @@ To install `tkcalendar`, run:
 ```bash
 pip install tkcalendar
 ```
+pip install pillow
 
 How to Run:
 1. Clone or download this repository.
