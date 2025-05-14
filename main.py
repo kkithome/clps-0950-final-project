@@ -4,6 +4,7 @@ from tkinter import messagebox
 from tkinter import filedialog #shows popup alert boxes
 from tkcalendar import Calendar 
 from datetime import datetime
+from PIL import Image, ImageTk
 import json
 import os
 
@@ -11,33 +12,49 @@ import os
 #Loading past user data
 USER_FILE = "users.json"
 SETTINGS_FILE = "users_settings.json"
+ASSIGNMENTS_FILE = "assignments.json"
 
 def load_users():
     try:
         with open(USER_FILE, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
     
 def load_settings():
     try: 
         with open(SETTINGS_FILE, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError,json.JSONDecodeError):
         return {}
     
+def load_assignments():
+    try: 
+        with open(ASSIGNMENTS_FILE, "r") as f:
+            return json.load(f)
+    except FileExistsError:
+        with open(ASSIGNMENTS_FILE, "w") as f: 
+            json.dump({}, f)
+        return {}
+    except json.JSONDecodeError:
+        return {}
 
 def save_users(users):
     with open(USER_FILE, "w") as f: 
         json.dump(users, f, indent=4)
 
-def save_settings(users):
+def save_settings(settings):
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings, f, indent=4)
+
+def save_assignments(assignments):
+    with open(ASSIGNMENTS_FILE, "w") as f:
+        json.dump(assignments, f, indent=4)
 
 
 users = load_users()
 settings = load_settings()
+assignments = load_assignments()
 
 #Creates an Admin page -> we need to add page for this
 def is_admin(username):
@@ -112,6 +129,32 @@ class Assignment:
         self.completed = completed
         self.priority = priority  # add priority to make it go 'to do' list 
 
+    def add_to_user(self, username):
+        assignments = load_assignments()
+        if username not in assignments:
+            assignments[username] = {"assignments": {}}
+        assignments[username]["assignments"][self.title] = self.__dict__
+        save_assignments(assignments)
+
+    def delete_assignments(username, title):
+        assignments = load_assignments()
+
+        if username in assignments and title in assignments[username]["assignments"]:
+            del assignments[username]["assignments"][title]
+            save_assignments(assignments)
+            return True
+        return False
+    
+    def update_assignments(username, title, updated_data):
+        assignments = load_assignments()
+        if username in assignments and title in assignments[username]["assignments"]:
+            assignments[username]["assignments"][title].update(updated_data)
+            save_assignments(assignments)
+            return True
+        return False
+
+
+
 class AssignmentTrackerApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -155,16 +198,12 @@ class AssignmentTrackerApp(tk.Tk):
         messagebox.showinfo("Logged Out", "You have been logged out")
         self.show_login()
 
-    
 
     def show_nav_bar(self):
         self.nav_bar.pack(fill='x')
 
     def hide_nav_bar(self):
         self.nav_bar.pack_forget()
-
-    
-
 
     def show_page(self, page_class):
         frame = self.frames[page_class.__name__]
@@ -409,6 +448,7 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
+            username = self.controller.current_user["username"]
             new_assignment = Assignment(
                 entries["Title"].get(),
                 entries["Due Date in YYYY-MM-DD format"].get(),
@@ -423,9 +463,9 @@ class TablePage(tk.Frame):
                 datetime.strptime(due_date, "%Y-%m-%d")
             except ValueError:
                 messagebox.showerror("Invalid Date", "Please enter Due date in YYYY-MM-DD format.")
-            return
+                return
             
-            self.controller.assignments.append(new_assignment)
+            new_assignment.add_to_user(username)
             self.refresh()
             popup.destroy()
 
@@ -440,12 +480,15 @@ class TablePage(tk.Frame):
         for item in selected_items:
             values = self.tree.item(item, "values")
             title = values[1]
-            due_date = values[2]
-            self.controller.assignments = [
-                a for a in self.controller.assignments
-                if not (a.title == title and a.due_date == due_date)
-            ]
-            self.tree.delete(item)
+
+            if Assignment.delete_assignments(self.controller.current_user["username"], title):
+                self.tree.delete(item)
+            #due_date = values[2]
+            #self.controller.assignments = [
+            #    a for a in self.controller.assignments
+            #    if not (a.title == title and a.due_date == due_date)
+            #]
+            #self.tree.delete(item)
 
         messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
 
@@ -670,13 +713,21 @@ class SettingsPage(tk.Frame):
 
         tk.Button(self, text="Save Settings", command=self.save_settings).pack(pady=10)
 
-        self.load_settings()
-
     def upload_image(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
-        if file_path:
-            self.image_label.config(text=f"Selected: {os.path.basename(file.path)}")
-            self.profile_picture = file_path
+        file_path = filedialog.askopenfilename()
+        
+        if not file_path:
+            return
+        
+        self.image_label.config(text=f"Selected: {os.path.basename(file_path)}")
+        self.profile_picture = file_path
+
+        img = Image.open(file_path)
+        img = img.resize((100,100))
+        img_tk = ImageTk.PhotoImage(img)
+
+        self.image_label.config(image=img_tk)
+        self.image_label.image = img_tk
 
     def save_settings(self):
         settings = {
@@ -688,6 +739,8 @@ class SettingsPage(tk.Frame):
 
         with open("user_settings.json", "w") as file:
             json.dump(settings, file)
+        
+        messagebox.showinfo("Success", "Settings have been saved succesfully.")
 
     def load_settings(self):
         if os.path.exists("user_settings.json"):
@@ -700,12 +753,6 @@ class SettingsPage(tk.Frame):
                 if settings.get("profile_picture"):
                     self.image_label.config(text=f"Selected: {os.path.basename(settings['profile_picture'])}")
     
-
-
-                                        
-
-
-
 
 if __name__ == "__main__":
     app = AssignmentTrackerApp()
