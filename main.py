@@ -5,6 +5,7 @@ from tkinter import filedialog #shows popup alert boxes
 from tkcalendar import Calendar 
 from datetime import datetime
 from PIL import Image, ImageTk
+import random
 import json
 import os
 
@@ -164,6 +165,8 @@ class AssignmentTrackerApp(tk.Tk):
 
         self.current_user = None
         self.assignments = []
+        self.class_colors = {}
+
 
         self.nav_bar = tk.Frame(self, bg="#eee", height=50)
 
@@ -400,15 +403,15 @@ class TablePage(tk.Frame):
                                 command=self.open_add_assignment_popup)
         plus_button.pack(side="right", padx=10)
 
-        # Assignment Review
+        # Treeview
         self.tree = ttk.Treeview(
             self,
-            columns=("Priority", "Title", "Due Date in YYYY-MM-DD format", "Class", "Type", "Completed"),
+            columns=("Priority", "Title", "Due Date", "Class", "Type", "Completed"),
             show="headings"
         )
         self.tree.heading("Priority", text="★")
         self.tree.heading("Title", text="Title")
-        self.tree.heading("Due Date in YYYY-MM-DD format", text="Due Date")
+        self.tree.heading("Due Date", text="Due Date")
         self.tree.heading("Class", text="Class Name")
         self.tree.heading("Type", text="Type")
         self.tree.heading("Completed", text="Completed")
@@ -417,7 +420,14 @@ class TablePage(tk.Frame):
 
     def refresh(self):
         self.tree.delete(*self.tree.get_children())
+
         for a in self.controller.assignments:
+            # Assign color if new class
+            if a.class_name not in self.controller.class_colors:
+                self.controller.class_colors[a.class_name] = self.generate_random_color()
+
+            row_color = self.controller.class_colors[a.class_name]
+
             self.tree.insert("", "end", values=(
                 "★" if a.priority else "",
                 a.title,
@@ -425,7 +435,12 @@ class TablePage(tk.Frame):
                 a.class_name,
                 a.assignment_type,
                 "Yes" if a.completed else "No"
-            ))
+            ), tags=(a.class_name,))
+
+            self.tree.tag_configure(a.class_name, background=row_color)
+
+    def generate_random_color(self):
+        return "#{:06x}".format(random.randint(0x444444, 0xDDDDDD))
 
     def open_add_assignment_popup(self):
         popup = tk.Toplevel(self)
@@ -433,7 +448,7 @@ class TablePage(tk.Frame):
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
+        fields = ["Title", "Due Date", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
@@ -448,24 +463,15 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
-            username = self.controller.current_user["username"]
             new_assignment = Assignment(
                 entries["Title"].get(),
-                entries["Due Date in YYYY-MM-DD format"].get(),
+                entries["Due Date"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
                 priority=priority_var.get()
             )
-            due_date = entries["Due Date in YYYY-MM-DD format"].get()
-
-            try:
-                datetime.strptime(due_date, "%Y-%m-%d")
-            except ValueError:
-                messagebox.showerror("Invalid Date", "Please enter Due date in YYYY-MM-DD format.")
-                return
-            
-            new_assignment.add_to_user(username)
+            self.controller.assignments.append(new_assignment)
             self.refresh()
             popup.destroy()
 
@@ -479,16 +485,12 @@ class TablePage(tk.Frame):
 
         for item in selected_items:
             values = self.tree.item(item, "values")
-            title = values[1]
-
-            if Assignment.delete_assignments(self.controller.current_user["username"], title):
-                self.tree.delete(item)
-            #due_date = values[2]
-            #self.controller.assignments = [
-            #    a for a in self.controller.assignments
-            #    if not (a.title == title and a.due_date == due_date)
-            #]
-            #self.tree.delete(item)
+            title, due_date = values[1], values[2]
+            self.controller.assignments = [
+                a for a in self.controller.assignments
+                if not (a.title == title and a.due_date == due_date)
+            ]
+            self.tree.delete(item)
 
         messagebox.showinfo("Deleted", "Selected assignment(s) deleted.")
 
@@ -500,21 +502,20 @@ class TablePage(tk.Frame):
 
         item = selected[0]
         values = self.tree.item(item, "values")
-        title = values[1]
-        due_date = values[2]
+        title, due_date = values[1], values[2]
 
         popup = tk.Toplevel(self)
         popup.title("Edit Assignment")
         popup.geometry("300x350")
         popup.grab_set()
 
-        fields = ["Title", "Due Date in YYYY-MM-DD format", "Class Name", "Type"]
+        fields = ["Title", "Due Date", "Class Name", "Type"]
         entries = {}
 
         for i, field in enumerate(fields):
             tk.Label(popup, text=field).pack(pady=(10 if i == 0 else 5, 0))
             entry = tk.Entry(popup)
-            entry.insert(0, values[i + 1])  # shift index: skip priority
+            entry.insert(0, values[i + 1])  # skip priority
             entry.pack()
             entries[field] = entry
 
@@ -524,7 +525,6 @@ class TablePage(tk.Frame):
         tk.Checkbutton(popup, text="Mark as Priority (★)", variable=priority_var).pack(pady=5)
 
         def save():
-            # Remove old
             self.controller.assignments = [
                 a for a in self.controller.assignments
                 if not (a.title == title and a.due_date == due_date)
@@ -532,7 +532,7 @@ class TablePage(tk.Frame):
 
             updated = Assignment(
                 entries["Title"].get(),
-                entries["Due Date in YYYY-MM-DD format"].get(),
+                entries["Due Date"].get(),
                 entries["Class Name"].get(),
                 entries["Type"].get(),
                 completed=completed_var.get(),
@@ -595,7 +595,7 @@ class CalendarPage(tk.Frame):
         content_frame.rowconfigure(0, weight=1)
         content_frame.rowconfigure(1, weight=1)
 
-        # Event binding
+        # Event binding?
         self.calendar.bind("<<CalendarSelected>>", self.show_assignments_for_selected_date)
 
     def refresh(self):

@@ -1,0 +1,22 @@
+{
+    "selamasfaw": {
+        "assignments": {
+            "PSET": {
+                "title": "PSET",
+                "due_date": "2025-05-17",
+                "class_name": "Math",
+                "assignment_type": "Hw",
+                "completed": false,
+                "priority": false
+            },
+            "sfd": {
+                "title": "sfd",
+                "due_date": "2025-05-15",
+                "class_name": "math",
+                "assignment_type": "hw",
+                "completed": false,
+                "priority": false
+            }
+        }
+    }
+}
